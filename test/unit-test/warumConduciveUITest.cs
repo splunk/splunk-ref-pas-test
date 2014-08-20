@@ -11,7 +11,7 @@ using System.Diagnostics;
 using Xunit;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
-//using System.Windows.Forms;
+using System.Linq;
 
 namespace unit_test
 {
@@ -63,12 +63,12 @@ namespace unit_test
 
                 //open "Date Range"
                 IReadOnlyCollection<IWebElement> searchCriterias = driver.FindElements(By.ClassName("accordion-toggle"));
-                searchCriterias.ElementAt(3).Click();                                
+                searchCriterias.ElementAt(3).Click();
 
                 // choose "Between" and filled up the earliest/latest inputs
                 var e3 = driver.FindElement(By.CssSelector(".accordion-group.active"));
                 var e4 = e3.FindElement(By.ClassName("accordion-body"));
-                var e5=e4.FindElement(By.ClassName("timerangepicker-range-type"));
+                var e5 = e4.FindElement(By.ClassName("timerangepicker-range-type"));
                 var e6 = e5.FindElement(By.ClassName("dropdown-toggle"));
                 e6.Click();
                 var e7 = driver.FindElement(By.CssSelector(".dropdown-menu.dropdown-menu-selectable.dropdown-menu-narrow.open"));
@@ -93,16 +93,27 @@ namespace unit_test
                 //click on the center panel color block
                 var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
                 var allActionBars = svg.FindElement(By.ClassName("highcharts-series-group")).FindElements(By.ClassName("highcharts-series"));
+
+                IReadOnlyCollection<IWebElement> topUsers = null;
                 for (int i = 0; i < allActionBars.Count; i++)
                 {
                     var u = allActionBars[i].FindElement(By.ClassName("highcharts-tracker"));
                     u.Click();
-                }               
-                
+                    var userTable = driver.FindElement(By.Id("user-table"));
+                    topUsers = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    this.VerifyTopReturnsSortedCorrectly(topUsers.Select(a => a.Text));
+
+                    var documentTable = driver.FindElement(By.Id("document-table"));
+                    var topDocuments = documentTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    this.VerifyTopReturnsSortedCorrectly(topDocuments.Select(a => a.Text));
+
+                }
+
+                this.TestClickOnTopUser(driver, topUsers);
             }
             catch (Exception e)
             {
-
+                throw e;
             }
             finally
             {
@@ -110,6 +121,31 @@ namespace unit_test
             }
 
             Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
+        }
+
+        private void TestClickOnTopUser(IWebDriver driver, IReadOnlyCollection<IWebElement> tops)
+        {
+            Random rand = new Random();
+            int index = rand.Next(0, tops.Count);
+            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
+
+            //verify user-event-document page
+            var topEventsTable = driver.FindElement(By.Id("user-table"));
+            var topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+            this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
+
+        }
+
+
+        private void VerifyTopReturnsSortedCorrectly(IEnumerable<string> inputs)
+        {
+            var current = int.MaxValue;
+            foreach (string str in inputs)
+            {
+                var next = int.Parse(str.Split(' ')[1]);
+                Assert.True(current >= next, string.Format("sorting is wrong at element {0}", str));
+                current = next;
+            }
         }
 
         private IWebDriver LoadSplunkHomePageAndSignIn()
