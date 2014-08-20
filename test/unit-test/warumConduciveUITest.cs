@@ -74,14 +74,11 @@ namespace unit_test
                 var e7 = driver.FindElement(By.CssSelector(".dropdown-menu.dropdown-menu-selectable.dropdown-menu-narrow.open"));
                 var e8 = e7.FindElements(By.ClassName("link-label"));
                 e8[0].Click();
-                var e9 = e4.FindElement(By.ClassName("timerangepicker-earliest-date"));
-                e9.Clear();
-                e9.SendKeys("08/11/2014");
-                e9.SendKeys(Keys.Enter);
-                var e10 = e4.FindElement(By.ClassName("timerangepicker-latest-date"));
-                e10.Clear();
-                e10.SendKeys("08/11/2014");
-                e10.SendKeys(Keys.Enter);
+
+                var earliestDate = e4.FindElement(By.ClassName("timerangepicker-earliest-date"));
+                this.SendInput("08/11/2014", earliestDate);
+                var latestDate = e4.FindElement(By.ClassName("timerangepicker-latest-date"));
+                this.SendInput("08/11/2014", latestDate);
 
                 //click on apply button
                 var e11 = e4.FindElement(By.ClassName("apply"));
@@ -136,6 +133,19 @@ namespace unit_test
 
         }
 
+        private void SendInput(string str, IWebElement element)
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            do
+            {
+                element.Clear();
+            }
+            while (watch.Elapsed.TotalSeconds < 10 && !(string.IsNullOrEmpty(element.GetAttribute("value"))));
+
+            element.SendKeys(str);
+            element.SendKeys(Keys.Enter);
+        }
 
         private void VerifyTopReturnsSortedCorrectly(IEnumerable<string> inputs)
         {
