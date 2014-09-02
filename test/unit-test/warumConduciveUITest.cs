@@ -143,9 +143,8 @@ namespace unit_test
 
         private void VerifyClickOnTrendChart(IWebElement svg)
         {
-            var allActionBars = svg.FindElement(By.ClassName("highcharts-series-group"))
-                .FindElements(By.ClassName("highcharts-series"));
-
+            var allActionBars = svg.FindElements(By.ClassName("highcharts-series"));
+    
             IReadOnlyCollection<IWebElement> topUsers = null;
             for (int i = 0; i < allActionBars.Count; i++)
             {
@@ -239,7 +238,6 @@ namespace unit_test
             }
 
             return ret;
-
         }
 
         private void TestClickOnTopUser()
@@ -281,7 +279,7 @@ namespace unit_test
             Console.WriteLine("load browers taks" + watch.Elapsed.TotalSeconds);
             watch.Reset();
 
-            driver.Navigate().GoToUrl("http://localhost:8000");
+            driver.Navigate().GoToUrl("http://localhost:8000/en-US/app/launcher/home");
             Console.WriteLine("load page takes " + watch.Elapsed.TotalSeconds);
             watch.Reset();
             Assert.Equal(driver.Title, "Login - Splunk");
