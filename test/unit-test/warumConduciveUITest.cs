@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,75 +8,186 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.IE;
 using OpenQA.Selenium.Chrome;
-using System.Diagnostics;
-using Xunit;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
-using System.Linq;
+using Xunit;
 
 namespace unit_test
 {
+    public class MyFixture : IDisposable
+    {
+        public IWebDriver Driver
+        {
+            get;
+            internal set;
+        }
+
+        /// <summary>
+        /// This should only be run once before all tests running
+        /// </summary>
+        public MyFixture()
+        {
+            this.Driver = new FirefoxDriver();
+        }
+
+        /// <summary>
+        /// This should only be run once after all tests running
+        /// </summary>
+        public void Dispose()
+        {
+            if (this.Driver != null)
+            {
+                this.Driver.Dispose();
+            }
+        }
+    }
+
     /// <summary>
     /// Tests the UI
     /// </summary>
-    public class warumConduciveUITest
+    public class WarumConduciveUITest : IUseFixture<MyFixture>, IDisposable
     {
         private static IWebDriver driver = null;
+        private static string splunkServerUrl = "http://10.80.9.38:8000/";
+        private static string conduciveAppUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/Summary/";
+        private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
+        private static bool firstTestRun = false;
+
+        public void SetFixture(MyFixture data)
+        {
+            if (!firstTestRun)
+            {
+                driver = data.Driver;
+                this.LoadSplunkHomePageAndSignIn();
+                firstTestRun = true;
+            }
+        }
+
+        public void Dispose()
+        {
+        }
+
         [Trait("unit-test", "LoadApp")]
         [Fact]
         public void LoadAppHomePage()
         {
-            this.LoadSplunkHomePageAndSignIn();
+            driver.Navigate().GoToUrl(splunkHomeUrl);
+            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
-            try
-            {   
-                var ele1 = driver.FindElement(By.CssSelector(".app-wrapper.appName-warum_conducive_web"));
-                var ele2 = ele1.FindElement(By.CssSelector(".slideNavPlaceHolder.group.app-slidenav"));
-                ele2.FindElement(By.LinkText("Summary")).Click();
-             
-                IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-                wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-                Assert.Equal("Summary", driver.Title);
-            }
-            finally
-            {
-                driver.Quit();
-            }
+            var ele1 = driver.FindElement(By.CssSelector(".app-wrapper.appName-warum_conducive_web"));
+            var ele2 = ele1.FindElement(By.CssSelector(".slideNavPlaceHolder.group.app-slidenav"));
+            ele2.FindElement(By.LinkText("Summary")).Click();
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+
+            Assert.Equal("Summary", driver.Title);
         }
 
         [Trait("unit-test", "Senario2Test1")]
         [Fact]
-        public void Senario2Test()
+        public void LoadSummaryPage()
         {
             Stopwatch watch = new Stopwatch();
             watch.Start();
 
-            this.LoadSplunkHomePageAndSignIn();
+            driver.Navigate().GoToUrl(conduciveAppUrl);
+
+            this.ChangeTimeRange();
+
+            //click on the center panel color block
+            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+
+            //wait for data page to finish loading
+            System.Threading.Thread.Sleep(5000);
+
+            this.VerifyClickOnTrendChartLegendItem(svg);
+
+            //this.TestClickOnTopUser();
+
+            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
+        }
+
+        [Trait("unit-test", "ClickOnTrendChart")]
+        [Fact]
+        public void ClickOnTrendChart()
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+
+            driver.Navigate().GoToUrl(conduciveAppUrl);
+            this.ChangeTimeRange();
+
+            //click on the center panel color block
+            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+            while (svg == null)
+            {
+                System.Threading.Thread.Sleep(100);
+            }
+
+            this.VerifyClickOnTrendChart(svg);
+
+            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
+        }
+
+        [Trait("unit-test", "UserDetails")]
+        [Fact]
+        public void UserDetails()
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+
+            driver.Navigate().GoToUrl(conduciveAppUrl);
+
+            this.ChangeTimeRange();
+
+            //click on the center panel color block
+            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+            System.Threading.Thread.Sleep(5000);
+
+            this.TestClickOnTopUsers();
+
+            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
+        }
+
+        [Trait("unit-test", "UserDetails")]
+        [Fact]
+        public void DocumentDetails()
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+
+            driver.Navigate().GoToUrl(conduciveAppUrl);
+
+            this.ChangeTimeRange();
+
+            //click on the center panel color block
+            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+            System.Threading.Thread.Sleep(5000);
+
+            this.TestClickOnTopDocuments();
+
+            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
+        }
+
+        [Trait("unit-test", "ClickonSwimline")]
+        [Fact]
+        public void ClickonSwimline()
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             try
             {
-                driver.Navigate().GoToUrl("http://localhost:8000/dj/en-us/warum_conducive_web/Summary/");
-                this.ChangeTimeRange();
-
-                //click on the center panel color block
-                var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-
-                //wait for data page to finish loading
-                System.Threading.Thread.Sleep(10000);
-
-                this.VerifyClickOnTrendChart(svg);
-
-                this.VerifyClickOnTrendChartLegendItem(svg);
-                Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
-
-                this.TestClickOnTopUser();
+                driver.Navigate().GoToUrl("http://nvd3.org/examples/multiBar.html");
+                var svg = driver.FindElement(By.TagName("svg"));
+                var switches = svg.FindElements(By.ClassName("nv-series"));
+                foreach (var swi in switches)
+                {
+                    swi.Click();
+                }
             }
             catch (Exception e)
             {
                 throw e;
-            }
-            finally
-            {
-                driver.Quit();
             }
 
             Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
@@ -144,26 +256,21 @@ namespace unit_test
         private void VerifyClickOnTrendChart(IWebElement svg)
         {
             var allActionBars = svg.FindElements(By.ClassName("highcharts-series"));
-    
-            IReadOnlyCollection<IWebElement> topUsers = null;
+
+            var barElementCoordinates = new List<Tuple<int, int>>();
+            IWebElement barUnit = null;
             for (int i = 0; i < allActionBars.Count; i++)
             {
                 Console.WriteLine("Verify allActionBars[{0}]", i);
-                var u = allActionBars[i].FindElement(By.ClassName("highcharts-tracker"));
-
-                this.TryClickOnEachBarElement(allActionBars[i]);
-
-                //u.Click();
-
-                //this.VerifyTopUserTable();
-                //this.VerifyTopDocumentTable();
+                barUnit = allActionBars[i].FindElement(By.ClassName("highcharts-tracker"));
+                barElementCoordinates = this.TryClickOnEachBarElement(allActionBars[i]);
             }
 
+            Actions action = new Actions(driver);
+            action.MoveToElement(barUnit, barElementCoordinates[0].Item1, barElementCoordinates[0].Item2).Click().Perform();
             Console.WriteLine("Click on the the central chart element succeed");
-
-            
         }
-        
+
         private void VerifyClickOnTrendChartLegendItem(IWebElement svg)
         {
             var highchartsLengendItems = svg.FindElements(By.ClassName("highcharts-legend-item"));
@@ -176,10 +283,13 @@ namespace unit_test
                 this.VerifyTopUserTable();
                 this.VerifyTopDocumentTable();
             }
+
+            Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
         }
 
-        private void TryClickOnEachBarElement(IWebElement element)
+        private List<Tuple<int, int>> TryClickOnEachBarElement(IWebElement element)
         {
+            List<Tuple<int, int>> ret = new List<Tuple<int, int>>();
             var u = element.FindElement(By.ClassName("highcharts-tracker"));
 
             Actions action = new Actions(driver);
@@ -195,6 +305,7 @@ namespace unit_test
                     int y = int.Parse(str1.Split(' ')[1]);
 
                     action.MoveToElement(u, x, y).Perform();
+                    ret.Add(new Tuple<int, int>(x, y));
                     //action.MoveToElement(u, x, y).Click().Perform();
                     //action.MoveToElement(u, x, y).Click().Build().Perform();
                 }
@@ -203,6 +314,8 @@ namespace unit_test
 
                 }
             }
+
+            return ret;
         }
 
         private List<string> BarCoordinate(string path)
@@ -240,7 +353,7 @@ namespace unit_test
             return ret;
         }
 
-        private void TestClickOnTopUser()
+        private void TestClickOnTopUsers()
         {
             var userTable = driver.FindElement(By.Id("user-table"));
             IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
@@ -248,8 +361,24 @@ namespace unit_test
             Random rand = new Random();
             int index = rand.Next(0, tops.Count);
             tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
-
             System.Threading.Thread.Sleep(8000);
+
+            //verify user-event-document page
+            var topEventsTable = driver.FindElement(By.Id("events-table"));
+            var topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+            this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
+        }
+
+        private void TestClickOnTopDocuments()
+        {
+            var userTable = driver.FindElement(By.Id("document-table"));
+            IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+
+            Random rand = new Random();
+            int index = rand.Next(0, tops.Count);
+            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
+            System.Threading.Thread.Sleep(8000);
+
             //verify user-event-document page
             var topEventsTable = driver.FindElement(By.Id("events-table"));
             var topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
@@ -272,16 +401,15 @@ namespace unit_test
             Stopwatch watch = new Stopwatch();
             watch.Start();
 
-            driver = new FirefoxDriver();
-
             // set the timeout after page load to 30seconds
             driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, 30));
+            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             Console.WriteLine("load browers taks" + watch.Elapsed.TotalSeconds);
-            watch.Reset();
 
-            driver.Navigate().GoToUrl("http://localhost:8000/en-US/app/launcher/home");
-            Console.WriteLine("load page takes " + watch.Elapsed.TotalSeconds);
             watch.Reset();
+            driver.Navigate().GoToUrl(splunkHomeUrl);
+            Console.WriteLine("load page takes " + watch.Elapsed.TotalSeconds);
             Assert.Equal(driver.Title, "Login - Splunk");
 
             // login 
@@ -295,8 +423,6 @@ namespace unit_test
             }
 
             Console.WriteLine("login takes " + watch.Elapsed.TotalSeconds);
-
         }
     }
 }
-
