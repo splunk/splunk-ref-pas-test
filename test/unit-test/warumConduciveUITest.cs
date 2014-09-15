@@ -11,6 +11,7 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using Xunit;
+using System.IO;
 
 namespace unit_test
 {
@@ -22,12 +23,20 @@ namespace unit_test
             internal set;
         }
 
+        public List<string> Logs
+        {
+            get;
+            internal set;
+        }
+
         /// <summary>
         /// This should only be run once before all tests running
         /// </summary>
         public MyFixture()
         {
             this.Driver = new FirefoxDriver();
+            this.Logs = new List<string>();
+            Logs.Add(string.Format("============================== New Test Run Start at {0}==============================", System.DateTime.Now));
         }
 
         /// <summary>
@@ -39,6 +48,14 @@ namespace unit_test
             {
                 this.Driver.Dispose();
             }
+
+            Logs.Add(string.Format("============================== End Test Run at {0}==============================", System.DateTime.Now));
+            string userHomePath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            Console.WriteLine(userHomePath);
+            StreamWriter logFile = new StreamWriter(userHomePath + "\\" + "WarumTestPerfLog.txt", true);
+            Logs.ForEach(a => logFile.WriteLine(a));
+            logFile.Dispose();
+            logFile.Close();
         }
     }
 
@@ -52,14 +69,18 @@ namespace unit_test
         private static string conduciveAppUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/Summary/";
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
         private static bool firstTestRun = false;
+        private static List<string> logs = null;
+        private static Stopwatch watch = new Stopwatch();
 
         public void SetFixture(MyFixture data)
         {
             if (!firstTestRun)
             {
                 driver = data.Driver;
+                logs = data.Logs;
                 this.LoadSplunkHomePageAndSignIn();
                 firstTestRun = true;
+                watch.Start();
             }
         }
 
@@ -75,10 +96,24 @@ namespace unit_test
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
-            var ele1 = driver.FindElement(By.CssSelector(".app-wrapper.appName-warum_conducive_web"));
-            var ele2 = ele1.FindElement(By.CssSelector(".slideNavPlaceHolder.group.app-slidenav"));
-            ele2.FindElement(By.LinkText("Summary")).Click();
-            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+            watch.Restart();
+            bool loaded = false;
+            do
+            {
+                try
+                {
+                    var ele1 = driver.FindElement(By.CssSelector(".app-wrapper.appName-warum_conducive_web"));
+                    var ele2 = ele1.FindElement(By.CssSelector(".slideNavPlaceHolder.group.app-slidenav"));
+                    ele2.FindElement(By.LinkText("Summary")).Click();
+                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+                    loaded = true;
+                    logs.Add("1. Load App page (in seconds) = " + watch.Elapsed.TotalSeconds);
+                }
+                catch (Exception e)
+                {
+                    logs.Add(watch.Elapsed.TotalSeconds + "==" + e.Message);
+                }                
+            } while (!loaded && watch.Elapsed.TotalSeconds < 30);
 
             Assert.Equal("Summary", driver.Title);
         }
@@ -87,86 +122,32 @@ namespace unit_test
         [Fact]
         public void LoadSummaryPage()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-
-            driver.Navigate().GoToUrl(conduciveAppUrl);
-
-            this.ChangeTimeRange();
-
-            //click on the center panel color block
-            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-
-            //wait for data page to finish loading
-            System.Threading.Thread.Sleep(5000);
-
+            var svg = GetSvgInSummaryPage();         
             this.VerifyClickOnTrendChartLegendItem(svg);
-
-            //this.TestClickOnTopUser();
-
-            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
         }
 
         [Trait("unit-test", "ClickOnTrendChart")]
         [Fact]
         public void ClickOnTrendChart()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-
-            driver.Navigate().GoToUrl(conduciveAppUrl);
-            this.ChangeTimeRange();
-
-            //click on the center panel color block
-            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-            while (svg == null)
-            {
-                System.Threading.Thread.Sleep(100);
-            }
-
+            var svg = GetSvgInSummaryPage();
             this.VerifyClickOnTrendChart(svg);
-
-            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
         }
 
         [Trait("unit-test", "UserDetails")]
         [Fact]
         public void UserDetails()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-
-            driver.Navigate().GoToUrl(conduciveAppUrl);
-
-            this.ChangeTimeRange();
-
-            //click on the center panel color block
-            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-            System.Threading.Thread.Sleep(5000);
-
+            var svg = GetSvgInSummaryPage();
             this.TestClickOnTopUsers();
-
-            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
         }
 
         [Trait("unit-test", "UserDetails")]
         [Fact]
         public void DocumentDetails()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-
-            driver.Navigate().GoToUrl(conduciveAppUrl);
-
-            this.ChangeTimeRange();
-
-            //click on the center panel color block
-            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-            System.Threading.Thread.Sleep(5000);
-
+            var svg = GetSvgInSummaryPage();       
             this.TestClickOnTopDocuments();
-
-            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
         }
 
         [Trait("unit-test", "ClickonSwimline")]
@@ -191,6 +172,35 @@ namespace unit_test
             }
 
             Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
+        }
+
+        private IWebElement GetSvgInSummaryPage()
+        {
+            driver.Navigate().GoToUrl(conduciveAppUrl);
+            this.ChangeTimeRange();
+
+            //click on the center panel color block
+            watch.Restart();
+            bool found = false;
+            IWebElement svg = null;
+            do
+            {
+                try
+                {
+                    svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+                    found = true;
+                    logs.Add("2. Load Summary page Center Chart (in seconds) = " + watch.Elapsed.TotalSeconds);
+                }
+                catch { }
+            } while (!found && watch.Elapsed.TotalSeconds < 30);
+
+            if (!found)
+            {
+                logs.Add("!!!Exception: Load Summary page Center Chart more than 30 seconds");
+                throw new Exception("Can't find svg element on the App Summary page");
+            }
+
+            return svg;
         }
 
         private void ChangeTimeRange()
@@ -225,8 +235,7 @@ namespace unit_test
 
         private void SendInput(string str, IWebElement element)
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
+            watch.Restart();
             do
             {
                 element.Clear();
@@ -280,8 +289,6 @@ namespace unit_test
             {
                 var element = highchartsLengendItems[i].FindElement(By.TagName("rect"));
                 element.Click();
-                this.VerifyTopUserTable();
-                this.VerifyTopDocumentTable();
             }
 
             Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
@@ -360,12 +367,26 @@ namespace unit_test
 
             Random rand = new Random();
             int index = rand.Next(0, tops.Count);
-            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
-            System.Threading.Thread.Sleep(8000);
 
-            //verify user-event-document page
-            var topEventsTable = driver.FindElement(By.Id("events-table"));
-            var topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+
+            watch.Restart();
+            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
+
+            bool loaded = false;
+            IReadOnlyCollection<IWebElement> topEvents = null;
+            do
+            {
+                try
+                {
+                    //verify user-event-document page
+                    var topEventsTable = driver.FindElement(By.Id("events-table"));
+                    topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    logs.Add("4. Load User Details page (in seconds) = " + watch.Elapsed.TotalSeconds);
+                    loaded = true;
+                }
+                catch { }
+            } while (!loaded && watch.Elapsed.TotalSeconds > 30);
+
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
@@ -376,12 +397,25 @@ namespace unit_test
 
             Random rand = new Random();
             int index = rand.Next(0, tops.Count);
-            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
-            System.Threading.Thread.Sleep(8000);
 
-            //verify user-event-document page
-            var topEventsTable = driver.FindElement(By.Id("events-table"));
-            var topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+            watch.Restart();
+            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
+
+            bool loaded = false;
+            IReadOnlyCollection<IWebElement> topEvents = null;
+            do
+            {
+                try
+                {
+                    //verify user-event-document page
+                    var topEventsTable = driver.FindElement(By.Id("events-table"));
+                    topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    logs.Add("3. Load Document Details page (in seconds) = " + watch.Elapsed.TotalSeconds);
+                    loaded = true;
+                }
+                catch { }
+            } while (!loaded && watch.Elapsed.TotalSeconds > 30);
+
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
@@ -398,8 +432,7 @@ namespace unit_test
 
         private void LoadSplunkHomePageAndSignIn()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
+            watch.Restart();
 
             // set the timeout after page load to 30seconds
             driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, 30));
@@ -407,7 +440,7 @@ namespace unit_test
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             Console.WriteLine("load browers taks" + watch.Elapsed.TotalSeconds);
 
-            watch.Reset();
+            watch.Restart();
             driver.Navigate().GoToUrl(splunkHomeUrl);
             Console.WriteLine("load page takes " + watch.Elapsed.TotalSeconds);
             Assert.Equal(driver.Title, "Login - Splunk");
