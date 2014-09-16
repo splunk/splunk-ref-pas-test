@@ -36,7 +36,7 @@ namespace unit_test
         {
             this.Driver = new FirefoxDriver();
             this.Logs = new List<string>();
-            Logs.Add(string.Format("============================== New Test Run Start at {0}==============================", System.DateTime.Now));
+            Logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, ============================== New Test Run Start ==============================", System.DateTime.Now));
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace unit_test
                 this.Driver.Dispose();
             }
 
-            Logs.Add(string.Format("============================== End Test Run at {0}==============================", System.DateTime.Now));
+            Logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, ============================== End Test Run ==============================", System.DateTime.Now));
             string userHomePath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             Console.WriteLine(userHomePath);
             StreamWriter logFile = new StreamWriter(userHomePath + "\\" + "WarumTestPerfLog.txt", true);
@@ -107,12 +107,12 @@ namespace unit_test
                     ele2.FindElement(By.LinkText("Summary")).Click();
                     wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
                     loaded = true;
-                    logs.Add("1. Load App page (in seconds) = " + watch.Elapsed.TotalSeconds);
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page (in seconds) = {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch (Exception e)
                 {
                     logs.Add(watch.Elapsed.TotalSeconds + "==" + e.Message);
-                }                
+                }
             } while (!loaded && watch.Elapsed.TotalSeconds < 30);
 
             Assert.Equal("Summary", driver.Title);
@@ -122,7 +122,7 @@ namespace unit_test
         [Fact]
         public void LoadSummaryPage()
         {
-            var svg = GetSvgInSummaryPage();         
+            var svg = GetSvgInSummaryPage();
             this.VerifyClickOnTrendChartLegendItem(svg);
         }
 
@@ -146,7 +146,7 @@ namespace unit_test
         [Fact]
         public void DocumentDetails()
         {
-            var svg = GetSvgInSummaryPage();       
+            var svg = GetSvgInSummaryPage();
             this.TestClickOnTopDocuments();
         }
 
@@ -189,14 +189,14 @@ namespace unit_test
                 {
                     svg = driver.FindElement(By.XPath("//*[name()='svg']"));
                     found = true;
-                    logs.Add("2. Load Summary page Center Chart (in seconds) = " + watch.Elapsed.TotalSeconds);
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart (in seconds) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch { }
             } while (!found && watch.Elapsed.TotalSeconds < 30);
 
             if (!found)
             {
-                logs.Add("!!!Exception: Load Summary page Center Chart more than 30 seconds");
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, !!!Exception: Load Summary page Center Chart more than 30 seconds", DateTime.Now));
                 throw new Exception("Can't find svg element on the App Summary page");
             }
 
@@ -381,7 +381,7 @@ namespace unit_test
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    logs.Add("4. Load User Details page (in seconds) = " + watch.Elapsed.TotalSeconds);
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page (in seconds) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
                 catch { }
@@ -410,7 +410,7 @@ namespace unit_test
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    logs.Add("3. Load Document Details page (in seconds) = " + watch.Elapsed.TotalSeconds);
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page (in seconds) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
                 catch { }
