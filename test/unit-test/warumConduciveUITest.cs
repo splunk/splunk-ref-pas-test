@@ -71,6 +71,7 @@ namespace unit_test
         private static bool firstTestRun = false;
         private static List<string> logs = null;
         private static Stopwatch watch = new Stopwatch();
+        private const int timeoutThreshold = 60; // seconds
 
         public void SetFixture(MyFixture data)
         {
@@ -107,13 +108,13 @@ namespace unit_test
                     ele2.FindElement(By.LinkText("Summary")).Click();
                     wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
                     loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page (in seconds) = {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch (Exception e)
                 {
-                    logs.Add(watch.Elapsed.TotalSeconds + "==" + e.Message);
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold * 5));
                 }
-            } while (!loaded && watch.Elapsed.TotalSeconds < 30);
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             Assert.Equal("Summary", driver.Title);
         }
@@ -189,14 +190,14 @@ namespace unit_test
                 {
                     svg = driver.FindElement(By.XPath("//*[name()='svg']"));
                     found = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart (in seconds) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch { }
-            } while (!found && watch.Elapsed.TotalSeconds < 30);
+            } while (!found && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             if (!found)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, !!!Exception: Load Summary page Center Chart more than 30 seconds", DateTime.Now));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold * 5));
                 throw new Exception("Can't find svg element on the App Summary page");
             }
 
@@ -381,7 +382,7 @@ namespace unit_test
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page (in seconds) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
                 catch { }
@@ -410,7 +411,7 @@ namespace unit_test
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page (in seconds) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
                 catch { }
