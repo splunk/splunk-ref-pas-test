@@ -65,7 +65,7 @@ namespace unit_test
     public class WarumConduciveUITest : IUseFixture<MyFixture>, IDisposable
     {
         private static IWebDriver driver = null;
-        private static string splunkServerUrl = "http://10.80.9.38:8000/";
+        private static string splunkServerUrl = "http://localhost:8000/";
         private static string conduciveAppUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/Summary/";
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
         private static bool firstTestRun = false;
@@ -408,7 +408,7 @@ namespace unit_test
                 }
                 catch (Exception e)
                 {
-
+                    Console.WriteLine(e);
                 }
             }
 
@@ -444,7 +444,9 @@ namespace unit_test
                     }
                 }
                 catch (Exception e)
-                { }
+                {
+                    Console.WriteLine(e);
+                }
             }
 
             return ret;

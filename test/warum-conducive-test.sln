@@ -2,8 +2,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "acceptance-tests", "acceptance-tests\acceptance-tests.csproj", "{140422D5-5D35-414E-BE1F-F4D70C85CFD6}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "unit-test", "unit-test\unit-test.csproj", "{3DC2855F-9068-40E4-9621-51CBB362845F}"
 EndProject
 Global
