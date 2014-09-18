@@ -71,7 +71,7 @@ namespace unit_test
         private static bool firstTestRun = false;
         private static List<string> logs = null;
         private static Stopwatch watch = new Stopwatch();
-        private const int timeoutThreshold = 60; // seconds
+        private const int timeoutThreshold = 90; // seconds
 
         public void SetFixture(MyFixture data)
         {
@@ -99,6 +99,7 @@ namespace unit_test
 
             watch.Restart();
             bool loaded = false;
+            Exception ex = null;
             do
             {
                 try
@@ -110,11 +111,17 @@ namespace unit_test
                     loaded = true;
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
-                catch (Exception e)
-                {
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold * 5));
-                }
+                catch (Exception e) { ex = e; }
             } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
 
             Assert.Equal("Summary", driver.Title);
         }
@@ -182,23 +189,27 @@ namespace unit_test
 
             //click on the center panel color block
             watch.Restart();
-            bool found = false;
+            bool loaded = false;
             IWebElement svg = null;
+            Exception ex = null;
             do
             {
                 try
                 {
                     svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-                    found = true;
+                    loaded = true;
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
-                catch { }
-            } while (!found && watch.Elapsed.TotalSeconds < timeoutThreshold);
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
-            if (!found)
+            if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold * 5));
-                throw new Exception("Can't find svg element on the App Summary page");
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
             }
 
             return svg;
@@ -290,10 +301,88 @@ namespace unit_test
             {
                 var element = highchartsLengendItems[i].FindElement(By.TagName("rect"));
                 element.Click();
+
+                watch.Restart();
+
+                //verify top user table result returned
+                Task task1 = Task.Run(() =>
+                {
+                    Exception ex = null;
+                    bool loaded = false;
+                    do
+                    {
+                        try
+                        {
+                            var userTable = driver.FindElement(By.Id("user-table"));
+                            var x = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                            if (x.Count > 0)
+                            {
+                                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 5. Load TopUser after click lengend ({2}) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds,
+                                    highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text));
+                                loaded = true;
+                            }
+                        }
+                        catch (Exception e) { ex = e; }
+                    } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
+
+                    if (!loaded)
+                    {
+                        logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 5. Load TopUser after click lengend ({1}) = {2} , !!!Exception: takes more than {3} seconds",
+                            DateTime.Now,
+                            highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text,
+                            timeoutThreshold + 10,
+                            timeoutThreshold));
+                        if (ex != null)
+                        {
+                            throw ex;
+                        }
+                    }
+                });
+
+                //verify top document table result returned
+                Task task2 = Task.Run(() =>
+                {
+                    Exception ex = null;
+                    bool loaded = false;
+                    do
+                    {
+                        try
+                        {
+                            var userTable = driver.FindElement(By.Id("document-table"));
+                            var x = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                            if (x.Count > 0)
+                            {
+                                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 6. Load TopDocument after click lengend ({2}) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds,
+                                    highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text));
+                                loaded = true;
+                            }
+                        }
+                        catch (Exception e) { ex = e; }
+                    } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
+
+                    if (!loaded)
+                    {
+                        logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 6. Load TopDocument after click lengend ({1}) = {2} , !!!Exception: takes more than {3} seconds",
+                            DateTime.Now,
+                            highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text,
+                            timeoutThreshold + 10,
+                            timeoutThreshold));
+
+                        if (ex != null)
+                        {
+                            throw ex;
+                        }
+                    }
+
+                });
+
+                task1.Wait();
+                task2.Wait();
             }
 
             Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
         }
+
 
         private List<Tuple<int, int>> TryClickOnEachBarElement(IWebElement element)
         {
@@ -375,6 +464,7 @@ namespace unit_test
 
             bool loaded = false;
             IReadOnlyCollection<IWebElement> topEvents = null;
+            Exception ex = null;
             do
             {
                 try
@@ -385,9 +475,17 @@ namespace unit_test
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
-                catch { }
-            } while (!loaded && watch.Elapsed.TotalSeconds > 30);
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
 
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page = {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
@@ -404,6 +502,8 @@ namespace unit_test
 
             bool loaded = false;
             IReadOnlyCollection<IWebElement> topEvents = null;
+            Exception ex = null;
+
             do
             {
                 try
@@ -414,9 +514,17 @@ namespace unit_test
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
-                catch { }
-            } while (!loaded && watch.Elapsed.TotalSeconds > 30);
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
 
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page = {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
