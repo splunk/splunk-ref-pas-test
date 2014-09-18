@@ -454,23 +454,20 @@ namespace unit_test
 
         private void TestClickOnTopUsers()
         {
-            var userTable = driver.FindElement(By.Id("user-table"));
-            IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-
-            Random rand = new Random();
-            int index = rand.Next(0, tops.Count);
-
-
-            watch.Restart();
-            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
-
             bool loaded = false;
             IReadOnlyCollection<IWebElement> topEvents = null;
             Exception ex = null;
+            watch.Restart();
             do
             {
                 try
                 {
+                    var userTable = driver.FindElement(By.Id("user-table"));
+                    IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+
+                    Random rand = new Random();
+                    int index = rand.Next(0, tops.Count);
+                    tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
@@ -488,28 +485,28 @@ namespace unit_test
                     throw ex;
                 }
             }
+
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
         private void TestClickOnTopDocuments()
         {
             var userTable = driver.FindElement(By.Id("document-table"));
-            IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-
-            Random rand = new Random();
-            int index = rand.Next(0, tops.Count);
-
-            watch.Restart();
-            tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
 
             bool loaded = false;
             IReadOnlyCollection<IWebElement> topEvents = null;
             Exception ex = null;
+            watch.Restart();
 
             do
             {
                 try
                 {
+                    IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    Random rand = new Random();
+                    int index = rand.Next(0, tops.Count);
+                    tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
+
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
@@ -527,6 +524,7 @@ namespace unit_test
                     throw ex;
                 }
             }
+            
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
