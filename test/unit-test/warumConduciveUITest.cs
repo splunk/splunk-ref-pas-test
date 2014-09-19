@@ -89,7 +89,7 @@ namespace unit_test
         {
         }
 
-        [Trait("unit-test", "LoadApp")]
+        [Trait("unit-test", "LoadAppHomePage")]
         [Fact]
         public void LoadAppHomePage()
         {
@@ -126,7 +126,7 @@ namespace unit_test
             Assert.Equal("Summary", driver.Title);
         }
 
-        [Trait("unit-test", "Senario2Test1")]
+        [Trait("unit-test", "LoadSummaryPage")]
         [Fact]
         public void LoadSummaryPage()
         {
@@ -150,7 +150,7 @@ namespace unit_test
             this.TestClickOnTopUsers();
         }
 
-        [Trait("unit-test", "UserDetails")]
+        [Trait("unit-test", "DocumentDetails")]
         [Fact]
         public void DocumentDetails()
         {
@@ -487,6 +487,7 @@ namespace unit_test
             }
 
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
+          
         }
 
         private void TestClickOnTopDocuments()
@@ -505,6 +506,7 @@ namespace unit_test
                     IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                     Random rand = new Random();
                     int index = rand.Next(0, tops.Count);
+                    Console.WriteLine("Debug info: index=" + index);
                     tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
 
                     //verify user-event-document page
