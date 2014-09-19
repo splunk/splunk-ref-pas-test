@@ -467,6 +467,7 @@ namespace unit_test
 
                     Random rand = new Random();
                     int index = rand.Next(0, tops.Count);
+                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}", index, tops.Count));
                     tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
@@ -506,7 +507,7 @@ namespace unit_test
                     IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                     Random rand = new Random();
                     int index = rand.Next(0, tops.Count);
-                    Console.WriteLine("Debug info: index=" + index);
+                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}", index, tops.Count));
                     tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
 
                     //verify user-event-document page
