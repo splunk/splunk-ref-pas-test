@@ -104,6 +104,7 @@ namespace unit_test
             {
                 try
                 {
+                    Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
                     var ele1 = driver.FindElement(By.CssSelector(".app-wrapper.appName-warum_conducive_web"));
                     var ele2 = ele1.FindElement(By.CssSelector(".slideNavPlaceHolder.group.app-slidenav"));
                     ele2.FindElement(By.LinkText("Summary")).Click();
@@ -196,6 +197,7 @@ namespace unit_test
             {
                 try
                 {
+                    Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
                     svg = driver.FindElement(By.XPath("//*[name()='svg']"));
                     loaded = true;
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
@@ -313,6 +315,7 @@ namespace unit_test
                     {
                         try
                         {
+                            Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
                             var userTable = driver.FindElement(By.Id("user-table"));
                             var x = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                             if (x.Count > 0)
@@ -323,7 +326,7 @@ namespace unit_test
                             }
                         }
                         catch (Exception e) { ex = e; }
-                    } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
+                    } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
                     if (!loaded)
                     {
@@ -348,6 +351,7 @@ namespace unit_test
                     {
                         try
                         {
+                            Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
                             var userTable = driver.FindElement(By.Id("document-table"));
                             var x = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                             if (x.Count > 0)
@@ -458,6 +462,7 @@ namespace unit_test
             IReadOnlyCollection<IWebElement> topEvents = null;
             Exception ex = null;
             watch.Restart();
+
             do
             {
                 try
@@ -467,7 +472,7 @@ namespace unit_test
 
                     Random rand = new Random();
                     int index = rand.Next(0, tops.Count);
-                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}", index, tops.Count));
+                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}, timeelapse={2}", index, tops.Count, watch.Elapsed.TotalSeconds));
                     tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
@@ -476,7 +481,7 @@ namespace unit_test
                     loaded = true;
                 }
                 catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             if (!loaded)
             {
@@ -488,7 +493,7 @@ namespace unit_test
             }
 
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
-          
+
         }
 
         private void TestClickOnTopDocuments()
@@ -507,7 +512,7 @@ namespace unit_test
                     IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                     Random rand = new Random();
                     int index = rand.Next(0, tops.Count);
-                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}", index, tops.Count));
+                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}, timeelapse={2}", index, tops.Count, watch.Elapsed.TotalSeconds));
                     tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
 
                     //verify user-event-document page
@@ -517,7 +522,7 @@ namespace unit_test
                     loaded = true;
                 }
                 catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             if (!loaded)
             {
@@ -527,7 +532,7 @@ namespace unit_test
                     throw ex;
                 }
             }
-            
+
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
