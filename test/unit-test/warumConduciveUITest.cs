@@ -66,7 +66,9 @@ namespace unit_test
     {
         private static IWebDriver driver = null;
         private static string splunkServerUrl = "http://localhost:8000/";
-        private static string conduciveAppUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/Summary/";
+        private static string conduciveSummaryUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/Summary/";
+        private static string conduciveSuspicousDocAccUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/suspicious_document_access/";
+        private static string conduciveTerminatedEmployeeUrl = splunkServerUrl + "dj/en-us/warum_conducive_web/terminated_employees/";
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
         private static bool firstTestRun = false;
         private static List<string> logs = null;
@@ -159,33 +161,51 @@ namespace unit_test
             this.TestClickOnTopDocuments();
         }
 
-        [Trait("unit-test", "ClickonSwimline")]
+        [Trait("unit-test", "SuspicouseDocAccess")]
         [Fact]
-        public void ClickonSwimline()
+        public void SuspicouseDocAccess()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-            try
+            driver.Navigate().GoToUrl(conduciveSuspicousDocAccUrl);
+            this.ChangeTimeRange();
+
+            //click on the center panel color block
+            watch.Restart();
+            bool loaded = false;
+            IWebElement svg = null;
+            Exception ex = null;
+            do
             {
-                driver.Navigate().GoToUrl("http://nvd3.org/examples/multiBar.html");
-                var svg = driver.FindElement(By.TagName("svg"));
-                var switches = svg.FindElements(By.ClassName("nv-series"));
-                foreach (var swi in switches)
+                try
                 {
-                    swi.Click();
+                    Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
+                    svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+                    loaded = true;
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 7. Load Suspicous-doc-access page Center Chart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 7. Load Suspicous-doc-access page Center Chart = {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
                 }
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
-
-            Console.WriteLine("total spend " + watch.Elapsed.TotalSeconds);
         }
 
+        [Trait("unit-test", "TerminatedEmployee")]
+        [Fact]
+        public void TerminatedEmployee()
+        {
+            driver.Navigate().GoToUrl(conduciveTerminatedEmployeeUrl);
+            this.ChangeTimeRange();
+        }
+        
         private IWebElement GetSvgInSummaryPage()
         {
-            driver.Navigate().GoToUrl(conduciveAppUrl);
+            driver.Navigate().GoToUrl(conduciveSummaryUrl);
             this.ChangeTimeRange();
 
             //click on the center panel color block
