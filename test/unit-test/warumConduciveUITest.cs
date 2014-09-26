@@ -497,6 +497,8 @@ namespace unit_test
                     //verify user-event-document page
                     var topEventsTable = driver.FindElement(By.Id("events-table"));
                     topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    var topDocsTable = driver.FindElement(By.Id("documents-table"));
+                    topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
@@ -512,8 +514,55 @@ namespace unit_test
                 }
             }
 
+            this.Verify_User_Details_Page();
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
+        }
 
+        private void Verify_User_Details_Page()
+        {
+            bool loaded = false;
+            Exception ex = null;
+            watch.Restart();
+
+            do
+            {
+                try
+                {
+                    IWebElement x_axis;
+                    string x_axis_startTime;
+
+                    //find the SVG of "zoom-chart-div"
+                    IWebElement zoomChart = driver.FindElement(By.Id("zoom-chart-div"));
+                    x_axis = zoomChart.FindElements(By.ClassName("highcharts-axis-labels"))[1];
+                    x_axis_startTime = x_axis.FindElements(By.TagName("text"))[0].Text.Trim();
+                    if (string.Compare(x_axis_startTime, "Thu Aug 72014") != 0)
+                    {
+                        throw new Exception(string.Format("Wrong initial date on the Trend chart, expecting 'Thu Aug 72014', but get '{0}'", x_axis_startTime));
+                    }
+
+                    //find the SVG of "trend-chart-div"
+                    IWebElement trendChart = driver.FindElement(By.Id("trend-chart-div"));
+                    x_axis = trendChart.FindElement(By.ClassName("highcharts-axis-labels"));
+                    x_axis_startTime = x_axis.FindElements(By.TagName("text"))[0].Text.Trim();
+                    if (string.Compare(x_axis_startTime, "Thu Aug 72014") != 0)
+                    {
+                        throw new Exception(string.Format("Wrong initial date on the Trend chart, expecting 'Thu Aug 72014', but get '{0}'", x_axis_startTime));
+                    }
+                    
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading User Details page trendChart and zoomChart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    loaded = true;
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading User Details page trendChart and zoomChart = {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
         }
 
         private void TestClickOnTopDocuments()
