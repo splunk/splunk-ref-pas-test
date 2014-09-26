@@ -382,7 +382,7 @@ namespace unit_test
                             }
                         }
                         catch (Exception e) { ex = e; }
-                    } while (!loaded && watch.Elapsed.TotalSeconds > timeoutThreshold);
+                    } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
                     if (!loaded)
                     {
