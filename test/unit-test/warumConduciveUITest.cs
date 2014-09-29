@@ -514,11 +514,11 @@ namespace unit_test
                 }
             }
 
-            this.Verify_User_Details_Page();
+            this.Verify_UserOrDocument_Details_Page("User");
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
-        private void Verify_User_Details_Page()
+        private void Verify_UserOrDocument_Details_Page(string msg)
         {
             bool loaded = false;
             Exception ex = null;
@@ -548,8 +548,8 @@ namespace unit_test
                     {
                         throw new Exception(string.Format("Wrong initial date on the Trend chart, expecting 'Thu Aug 72014', but get '{0}'", x_axis_startTime));
                     }
-                    
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading User Details page trendChart and zoomChart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading {2} Details page trendChart and zoomChart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds, msg));
                     loaded = true;
                 }
                 catch (Exception e) { ex = e; }
@@ -557,7 +557,7 @@ namespace unit_test
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading User Details page trendChart and zoomChart = {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading {2} Details page trendChart and zoomChart = {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, msg));
                 if (ex != null)
                 {
                     throw ex;
@@ -602,6 +602,7 @@ namespace unit_test
                 }
             }
 
+            this.Verify_UserOrDocument_Details_Page("Document");
             this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
