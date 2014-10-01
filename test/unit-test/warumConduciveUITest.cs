@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.IE;
-using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using Xunit;
@@ -112,14 +111,14 @@ namespace unit_test
                     ele2.FindElement(By.LinkText("Summary")).Click();
                     wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
                     loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load App page = {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch (Exception e) { ex = e; }
             } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 1. Load App page = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load App page = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
                 if (ex != null)
                 {
                     throw ex;
@@ -133,6 +132,8 @@ namespace unit_test
         [Fact]
         public void LoadSummaryPage()
         {
+            driver.Navigate().GoToUrl(conduciveSummaryUrl);
+            this.ChangeTimeRangeNew();
             var svg = GetSvgInSummaryPage();
             this.VerifyClickOnTrendChartLegendItem(svg);
         }
@@ -141,6 +142,8 @@ namespace unit_test
         [Fact]
         public void ClickOnTrendChart()
         {
+            driver.Navigate().GoToUrl(conduciveSummaryUrl);
+            this.ChangeTimeRangeNew();
             var svg = GetSvgInSummaryPage();
             this.VerifyClickOnTrendChart(svg);
         }
@@ -149,16 +152,20 @@ namespace unit_test
         [Fact]
         public void UserDetails()
         {
+            driver.Navigate().GoToUrl(conduciveSummaryUrl);
+            this.ChangeTimeRangeNew();
             var svg = GetSvgInSummaryPage();
-            this.TestClickOnTopUsers();
+            this.TestClickOnTopUserOrDocuments("user-table");
         }
 
         [Trait("unit-test", "DocumentDetails")]
         [Fact]
         public void DocumentDetails()
         {
+            driver.Navigate().GoToUrl(conduciveSummaryUrl);
+            this.ChangeTimeRangeNew();
             var svg = GetSvgInSummaryPage();
-            this.TestClickOnTopDocuments();
+            this.TestClickOnTopUserOrDocuments("document-table");
         }
 
         [Trait("unit-test", "SuspicouseDocAccess")]
@@ -180,14 +187,14 @@ namespace unit_test
                     Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
                     svg = driver.FindElement(By.XPath("//*[name()='svg']"));
                     loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 7. Load Suspicous-doc-access page Center Chart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Suspicous-doc-access page Center Chart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch (Exception e) { ex = e; }
             } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 7. Load Suspicous-doc-access page Center Chart = {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Suspicous-doc-access page Center Chart, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
                 if (ex != null)
                 {
                     throw ex;
@@ -202,12 +209,9 @@ namespace unit_test
             driver.Navigate().GoToUrl(conduciveTerminatedEmployeeUrl);
             this.ChangeTimeRange();
         }
-        
-        private IWebElement GetSvgInSummaryPage()
-        {
-            driver.Navigate().GoToUrl(conduciveSummaryUrl);
-            this.ChangeTimeRange();
 
+        private IWebElement GetSvgInSummaryPage()
+        {          
             //click on the center panel color block
             watch.Restart();
             bool loaded = false;
@@ -220,14 +224,14 @@ namespace unit_test
                     Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
                     svg = driver.FindElement(By.XPath("//*[name()='svg']"));
                     loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page Center Chart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                 }
                 catch (Exception e) { ex = e; }
             } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 2. Load Summary page Center Chart = {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page Center Chart, {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
                 if (ex != null)
                 {
                     throw ex;
@@ -239,11 +243,29 @@ namespace unit_test
 
         private void ChangeTimeRange()
         {
-            //open "time Range"
-            driver.FindElement(By.ClassName("time-label")).Click();
-            IReadOnlyCollection<IWebElement> searchCriterias = driver.FindElements(By.ClassName("accordion-toggle"));
-            searchCriterias.ElementAt(3).Click();
-            Console.WriteLine("Open time selection dialog succeed");
+            bool loaded = false;
+            watch.Restart();
+            Exception ex = null;
+            do
+            {
+                try
+                {
+                    //open "time Range"
+                    driver.FindElement(By.ClassName("time-label")).Click();
+                    IReadOnlyCollection<IWebElement> searchCriterias = driver.FindElements(By.ClassName("accordion-toggle"));
+                    searchCriterias.ElementAt(3).Click();
+                    loaded = true;
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
 
             // choose "Between" and filled up the earliest/latest inputs
             var e3 = driver.FindElement(By.CssSelector(".accordion-group.active"));
@@ -267,6 +289,63 @@ namespace unit_test
             Console.WriteLine("Change time selection succeed");
         }
 
+        private void ChangeTimeRangeNew()
+        {
+            bool loaded = false;
+            watch.Restart();
+            Exception ex = null;
+            do
+            {
+                try
+                {
+                    //open "time picker"
+                    var timepicker = driver.FindElement(By.Id("timepicker"));
+                    var timelabel = timepicker.FindElement(By.ClassName("time-label"));
+                    timelabel.Click();
+                    loaded = true;
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }     
+
+            //open "Date Range" dropdown option
+            var timepickerview = driver.FindElement(By.CssSelector(".accordion.view-new-time-range-picker-dialog.shared-timerangepicker-dialog"));
+            var timepicerviewGroups = timepickerview.FindElements(By.ClassName("accordion-group"));
+            // select the "Date Range" dropdown option
+            timepicerviewGroups[2].FindElement(By.ClassName("accordion-toggle")).Click();
+
+            //change the date in the "Date Range" option
+            var dateRange = driver.FindElement(By.CssSelector(".accordion-inner.shared-timerangepicker-dialog-daterange"));
+            var dateRangeBtn = dateRange.FindElement(By.CssSelector(".dropdown-toggle.btn"));
+            //open "Before between after" button
+            dateRangeBtn.FindElement(By.ClassName("link-label")).Click();
+
+            var e7 = driver.FindElement(By.CssSelector(".dropdown-menu.dropdown-menu-selectable.dropdown-menu-narrow.open"));
+            var e8 = e7.FindElements(By.ClassName("link-label"));
+            //select the "between" buttion
+            e8[0].Click();
+
+            //change the date value
+            var e3 = driver.FindElement(By.CssSelector(".accordion-group.active"));
+            var e4 = e3.FindElement(By.ClassName("accordion-body"));
+            var earliestDate = e4.FindElement(By.CssSelector(".timerangepicker-earliest-date.hasDatepicker"));
+            this.SendInput("08/07/2014", earliestDate);
+            var latestDate = e4.FindElement(By.CssSelector(".timerangepicker-latest-date.hasDatepicker"));
+            this.SendInput("08/11/2014", latestDate);
+            //click on apply button
+            var e11 = e4.FindElement(By.ClassName("apply"));
+            e11.Click();
+
+            Console.WriteLine("Change time selection succeed");
+        }
+
         private void SendInput(string str, IWebElement element)
         {
             watch.Restart();
@@ -279,23 +358,7 @@ namespace unit_test
             element.SendKeys(str);
             element.SendKeys(Keys.Enter);
         }
-
-        private void VerifyTopUserTable()
-        {
-            var userTable = driver.FindElement(By.Id("user-table"));
-            IReadOnlyCollection<IWebElement> topUsers = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-            this.VerifyTopReturnsSortedCorrectly(topUsers.Select(a => a.Text));
-            //Console.WriteLine("Verify top user table succeed");
-        }
-
-        private void VerifyTopDocumentTable()
-        {
-            var documentTable = driver.FindElement(By.Id("document-table"));
-            var topDocuments = documentTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-            this.VerifyTopReturnsSortedCorrectly(topDocuments.Select(a => a.Text));
-            //Console.WriteLine("Verify top document table succeed");
-        }
-
+        
         private void VerifyClickOnTrendChart(IWebElement svg)
         {
             var allActionBars = svg.FindElements(By.ClassName("highcharts-series"));
@@ -318,95 +381,19 @@ namespace unit_test
         {
             var highchartsLengendItems = svg.FindElements(By.ClassName("highcharts-legend-item"));
             Console.WriteLine("Load the central chart lengend succeed");
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
 
             for (int i = 0; i < highchartsLengendItems.Count; i++)
             {
                 var element = highchartsLengendItems[i].FindElement(By.TagName("rect"));
                 element.Click();
-
+                
                 watch.Restart();
-
-                //verify top user table result returned
-                Task task1 = Task.Run(() =>
-                {
-                    Exception ex = null;
-                    bool loaded = false;
-                    do
-                    {
-                        try
-                        {
-                            Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
-                            var userTable = driver.FindElement(By.Id("user-table"));
-                            var x = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                            if (x.Count > 0)
-                            {
-                                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 5. Load TopUser after click lengend ({2}) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds,
-                                    highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text));
-                                loaded = true;
-                            }
-                        }
-                        catch (Exception e) { ex = e; }
-                    } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-                    if (!loaded)
-                    {
-                        logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 5. Load TopUser after click lengend ({1}) = {2} , !!!Exception: takes more than {3} seconds",
-                            DateTime.Now,
-                            highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text,
-                            timeoutThreshold + 10,
-                            timeoutThreshold));
-                        if (ex != null)
-                        {
-                            throw ex;
-                        }
-                    }
-                });
-
-                //verify top document table result returned
-                Task task2 = Task.Run(() =>
-                {
-                    Exception ex = null;
-                    bool loaded = false;
-                    do
-                    {
-                        try
-                        {
-                            Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
-                            var userTable = driver.FindElement(By.Id("document-table"));
-                            var x = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                            if (x.Count > 0)
-                            {
-                                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 6. Load TopDocument after click lengend ({2}) = {1}", DateTime.Now, watch.Elapsed.TotalSeconds,
-                                    highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text));
-                                loaded = true;
-                            }
-                        }
-                        catch (Exception e) { ex = e; }
-                    } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-                    if (!loaded)
-                    {
-                        logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 6. Load TopDocument after click lengend ({1}) = {2} , !!!Exception: takes more than {3} seconds",
-                            DateTime.Now,
-                            highchartsLengendItems[i].FindElement(By.TagName("text")).FindElement(By.TagName("tspan")).Text,
-                            timeoutThreshold + 10,
-                            timeoutThreshold));
-
-                        if (ex != null)
-                        {
-                            throw ex;
-                        }
-                    }
-
-                });
-
-                task1.Wait();
-                task2.Wait();
+                this.VerifySummaryPage();             
             }
 
             Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
         }
-
 
         private List<Tuple<int, int>> TryClickOnEachBarElement(IWebElement element)
         {
@@ -476,10 +463,10 @@ namespace unit_test
             return ret;
         }
 
-        private void TestClickOnTopUsers()
+        private void VerifySummaryPage()
         {
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
             bool loaded = false;
-            IReadOnlyCollection<IWebElement> topEvents = null;
             Exception ex = null;
             watch.Restart();
 
@@ -487,19 +474,13 @@ namespace unit_test
             {
                 try
                 {
-                    var userTable = driver.FindElement(By.Id("user-table"));
-                    IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    Task task1 = Task.Factory.StartNew(() => this.VerifyTopTableLoaded("user-table"));
+                    Task task2 = Task.Factory.StartNew(() => this.VerifyTopTableLoaded("document-table"));
 
-                    Random rand = new Random();
-                    int index = rand.Next(0, tops.Count);
-                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}, timeelapse={2}", index, tops.Count, watch.Elapsed.TotalSeconds));
-                    tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
-                    //verify user-event-document page
-                    var topEventsTable = driver.FindElement(By.Id("events-table"));
-                    topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    var topDocsTable = driver.FindElement(By.Id("documents-table"));
-                    topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    task1.Wait();
+                    task2.Wait();
+
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
                     loaded = true;
                 }
                 catch (Exception e) { ex = e; }
@@ -507,15 +488,57 @@ namespace unit_test
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 4. Load User Details page = {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
                 if (ex != null)
                 {
                     throw ex;
                 }
             }
 
-            this.Verify_UserOrDocument_Details_Page("User");
-            this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
+            //this.Verify_UserOrDocument_Details_Page("Document");
+            //this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
+        }
+
+        private void VerifyTopTableLoaded(string tableName)
+        {
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
+            bool loaded = false;
+            Exception ex = null;
+            watch.Restart();
+
+            do
+            {
+                try
+                {
+                    var table = driver.FindElement(By.Id(tableName));
+                    IReadOnlyCollection<IWebElement> tops = table.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    Assert.True(tops.Count > 0);
+
+                    Random rand = new Random();
+                    int index = rand.Next(0, tops.Count);
+                    //click "include" dropdown menu
+                    Assert.True(tops.ElementAt(index).FindElement(By.ClassName("numeric")) != null);
+
+                    //this will fail as results keep updating
+                    this.VerifyTopReturnsSortedCorrectly(tops.Select(a => a.Text));
+
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds,tableName));
+                    loaded = true;
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, tableName));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
+
+            //    //this.Verify_UserOrDocument_Details_Page("Document");
+            //    //this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
 
         private void Verify_UserOrDocument_Details_Page(string msg)
@@ -549,7 +572,7 @@ namespace unit_test
                         throw new Exception(string.Format("Wrong initial date on the Trend chart, expecting 'Thu Aug 72014', but get '{0}'", x_axis_startTime));
                     }
 
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading {2} Details page trendChart and zoomChart = {1}", DateTime.Now, watch.Elapsed.TotalSeconds, msg));
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} Details page trendChart and zoomChart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, msg));
                     loaded = true;
                 }
                 catch (Exception e) { ex = e; }
@@ -557,7 +580,7 @@ namespace unit_test
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 8. Loading {2} Details page trendChart and zoomChart = {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, msg));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} Details page trendChart and zoomChart, {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, msg));
                 if (ex != null)
                 {
                     throw ex;
@@ -565,12 +588,10 @@ namespace unit_test
             }
         }
 
-        private void TestClickOnTopDocuments()
+        private void TestClickOnTopUserOrDocuments(string userOrDocument)
         {
-            var userTable = driver.FindElement(By.Id("document-table"));
-
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
             bool loaded = false;
-            IReadOnlyCollection<IWebElement> topEvents = null;
             Exception ex = null;
             watch.Restart();
 
@@ -578,16 +599,28 @@ namespace unit_test
             {
                 try
                 {
-                    IReadOnlyCollection<IWebElement> tops = userTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
+                    this.VerifyTopTableLoaded(userOrDocument);
+                    var table = driver.FindElement(By.Id(userOrDocument));
+                    IReadOnlyCollection<IWebElement> tops = table.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
                     Random rand = new Random();
                     int index = rand.Next(0, tops.Count);
-                    Console.WriteLine(string.Format("Debug info: index={0}, tops.count={1}, timeelapse={2}", index, tops.Count, watch.Elapsed.TotalSeconds));
-                    tops.ElementAt(index).FindElements(By.ClassName("numeric"))[0].Click();
 
-                    //verify user-event-document page
-                    var topEventsTable = driver.FindElement(By.Id("events-table"));
-                    topEvents = topEventsTable.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page = {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
+                    //click "include" dropdown menu
+                    tops.ElementAt(index).FindElement(By.ClassName("numeric")).Click();
+                    var dropdownmenu = driver.FindElements(By.CssSelector(".dropdown-menu.dropdown-context"));
+                    foreach (var x in dropdownmenu)
+                    {
+                        if (x.Displayed == true)
+                        {
+                            x.FindElements(By.ClassName("context-event"))[0].Click();
+                            break;
+                        }
+                    }
+
+                    this.GetSvgInSummaryPage();
+                    this.VerifySummaryPage();
+
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} Details page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, userOrDocument));
                     loaded = true;
                 }
                 catch (Exception e) { ex = e; }
@@ -595,17 +628,14 @@ namespace unit_test
 
             if (!loaded)
             {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, 3. Load Document Details page = {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {3} Details page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, userOrDocument));
                 if (ex != null)
                 {
                     throw ex;
                 }
             }
-
-            this.Verify_UserOrDocument_Details_Page("Document");
-            this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
         }
-
+             
         private void VerifyTopReturnsSortedCorrectly(IEnumerable<string> inputs)
         {
             var current = int.MaxValue;
@@ -617,12 +647,80 @@ namespace unit_test
             }
         }
 
+        private void RunAppSetup()
+        {
+            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+
+            watch.Restart();
+            bool loaded = false;
+            Exception ex = null;
+            do
+            {
+                try
+                {
+                    Console.WriteLine(string.Format("Debug info: timeelapse={0}", watch.Elapsed.TotalSeconds));
+                    var ele1 = driver.FindElement(By.CssSelector(".app-wrapper.appName-warum_conducive_web"));
+                    var ele2 = ele1.FindElement(By.CssSelector(".slideNavPlaceHolder.group.app-slidenav"));
+                    ele2.FindElement(By.LinkText("Setup")).Click();
+                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+                    loaded = true;
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load App setup page, {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load App setup page, {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
+
+            Assert.Equal("warum_conducive_web Setup", driver.Title);
+
+            var saveButton = driver.FindElement(By.CssSelector(".btn.btn-primary"));
+            this.SubmitSetupPage(saveButton);
+
+        }
+
+        private void SubmitSetupPage(IWebElement saveButton)
+        {
+            watch.Restart();
+            bool loaded = false;
+            Exception ex = null;
+            do
+            {
+                try
+                {
+                    IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+                    saveButton.Click();
+                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+                    loaded = true;
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Submit App setup page, {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+            if (!loaded)
+            {
+                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Submit App setup page, {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
+
+            Assert.Equal("Summary", driver.Title);
+        }
+
         private void LoadSplunkHomePageAndSignIn()
         {
             watch.Restart();
 
             // set the timeout after page load to 30seconds
-            driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, 30));
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             Console.WriteLine("load browers taks" + watch.Elapsed.TotalSeconds);
@@ -643,6 +741,10 @@ namespace unit_test
             }
 
             Console.WriteLine("login takes " + watch.Elapsed.TotalSeconds);
+
+            Console.WriteLine("now Need to run setup page");
+
+            this.RunAppSetup();
         }
     }
 }
