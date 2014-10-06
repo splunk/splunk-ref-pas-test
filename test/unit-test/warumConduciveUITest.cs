@@ -686,7 +686,37 @@ namespace unit_test
                 }
             }
 
+            this.VerifySwimline("user");
             this.VerifyClickOnTopEventOnUserOrDocumentDetailPage("user");
+        }
+
+        private void VerifySwimline(string msg)
+        {
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
+            bool loaded = false;
+            Exception ex = null;
+
+            do
+            {
+                try
+                {
+                    //test the swimline zoom window
+                    var e = driver.FindElement(By.Id("zoom-chart-div"));
+                    var e1 = e.FindElement(By.ClassName("highcharts-series"));
+                    var e2 = e1.FindElements(By.TagName("path"))[0];
+                    var e3 = e1.FindElements(By.TagName("path"))[1];
+
+                    Actions builder = new Actions(driver);
+                    builder.DragAndDropToOffset(e2, 412, 36).Perform();
+                    builder.DragAndDropToOffset(e3, 412, 36).Perform();
+
+                    //verify the "reset" shows up when the swim windows is selected.
+                    driver.FindElement(By.ClassName("icon-minus-circle"));
+
+                    loaded = true;
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
         }
 
         private void VerifyClickOnTopEventOnUserOrDocumentDetailPage(string msg)
