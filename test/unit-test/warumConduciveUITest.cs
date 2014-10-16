@@ -94,29 +94,25 @@ namespace unit_test
         [Fact]
         public void Summary()
         {
-            this.LoadSubitemPageFromSplunkhomePage("Summary", "Summary");
+            this.LoadSubItemPageFromSplunkhomePage("Summary", "Summary");
             this.ChangeTimeRangeNew();
-            var svg = GetSvgInSummaryPage();
-            //this.VerifyClickOnTrendChartLegendItem(svg);
 
-            this.TestClickOnTopUserOrDocuments("user-table");
-            this.RemoveUserFilter();
+            this.VerifySummaryPageElements();
 
-            this.TestClickOnTopUserOrDocuments("document-table");
-            this.RemoveUserFilter();
+            //click a user/doc drilldown and select included
+            this.Verify_ClickFilteredUserOrDocument("user");
+            this.Verify_ClickFilteredUserOrDocument("document");
+
+            ////this.VerifyClickOnTrendChartLegendItem(svg);
         }
-
 
         [Trait("unit-test", "UserDetails")]
         [Fact]
         public void UserDetails()
         {
-            this.LoadSubitemPageFromSplunkhomePage("User Details", "User Details");
+            this.LoadSubItemPageFromSplunkhomePage("User Details", "User Details");
 
-            //wait let the data load for no search criteria
-            //System.Threading.Thread.Sleep(5000);
-
-            var userInput = driver.FindElement(By.Id("userInput")).FindElement(By.Id("userInput-input"));
+            var userInput =StartWaitElementAppearTask(By.Id("userInput")).Result.FindElement(By.Id("userInput-input"));
             this.SendInput("rblack", userInput);
             this.ChangeTimeRangeNew();
 
@@ -138,128 +134,232 @@ namespace unit_test
         public void DocumentAccess()
         {
             this.LoadDocumentAccessPage();
-            System.Threading.Thread.Sleep(1000);
 
             this.VerifyAnomalousActivityPage();
-            System.Threading.Thread.Sleep(1000);
-
             this.VerifySuspiciousDocumentAccessPage();
-            System.Threading.Thread.Sleep(1000);
-
             this.VerifyTerminatedEmployeePage();
         }
 
-        private void RemoveUserFilter()
+        /// <summary>
+        /// Create a task to wait a web elment to show up, use this function if expect the item take some time to show up in the page
+        /// </summary>
+        /// <param name="parentElement"></param>
+        /// <param name="byMethod"></param>
+        /// <param name="logMsg"></param>
+        /// <returns></returns>
+        private Task<IWebElement> StartWaitElementAppearTask(IWebElement parentElement, By byMethod, string logMsg)
+        {
+            watch.Restart();
+            bool loaded = false;
+            Exception ex = null;
+
+            if (parentElement == null)
+            {
+                parentElement = driver.FindElement(By.TagName("html"));
+            }
+
+            return Task.Factory.StartNew(() =>
+            {
+                IWebElement result = null;
+                do
+                {
+                    try
+                    {
+                        result = parentElement.FindElement(byMethod);
+                        Assert.NotNull(result);
+
+                        if (logMsg != null)
+                        {
+                            logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, {2}, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, logMsg));
+                        }
+
+                        loaded = true;
+                    }
+                    catch (Exception e) { ex = e; }
+                } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+                if (!loaded)
+                {
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss},{3}, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, logMsg));
+                    if (ex != null)
+                    {
+                        throw ex;
+                    }
+                }
+
+                return result;
+            });
+        }
+
+        /// <summary>
+        /// same as StartWaitElementAppearTask except return a collections of IWebElement
+        /// </summary>
+        /// <param name="parentElement"></param>
+        /// <param name="byMethod"></param>
+        /// <param name="logMsg"></param>
+        /// <returns></returns>
+        private Task<IReadOnlyCollection<IWebElement>> StartWaitElementsAppearTask(IWebElement parentElement, By byMethod, string logMsg)
+        {
+            watch.Restart();
+            bool loaded = false;
+            Exception ex = null;
+            IReadOnlyCollection<IWebElement> result = null;
+
+            if (parentElement == null)
+            {
+                parentElement = driver.FindElement(By.TagName("html"));
+            }
+
+            return Task.Factory.StartNew(() =>
+            {
+                do
+                {
+                    try
+                    {
+                        result = parentElement.FindElements(byMethod).ToList();
+                        Assert.True(result.Count > 0);
+
+                        if (logMsg != null)
+                        {
+                            logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, {2}, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, logMsg));
+                        }
+
+                        loaded = true;
+                    }
+                    catch (Exception e) { ex = e; }
+                } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+
+                if (!loaded)
+                {
+                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss},{3}, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, logMsg));
+                    if (ex != null)
+                    {
+                        throw ex;
+                    }
+                }
+
+                return result;
+            });
+        }
+
+        private Task<IReadOnlyCollection<IWebElement>> StartWaitElementsAppearTask(By byMethod)
+        {
+            var parentElement = driver.FindElement(By.TagName("html"));
+            return this.StartWaitElementsAppearTask(parentElement, byMethod);
+        }
+
+        private Task<IReadOnlyCollection<IWebElement>> StartWaitElementsAppearTask(By byMethod, string logMsg)
+        {
+            var parentElement = driver.FindElement(By.TagName("html"));
+            return this.StartWaitElementsAppearTask(parentElement, byMethod, logMsg);
+        }
+
+        private Task<IReadOnlyCollection<IWebElement>> StartWaitElementsAppearTask(IWebElement parentElement, By byMethod)
+        {
+            return this.StartWaitElementsAppearTask(parentElement, byMethod, null);
+        }
+
+        private Task<IWebElement> StartWaitElementAppearTask(By byMethod)
+        {
+            var parentElement = driver.FindElement(By.TagName("html"));
+            return this.StartWaitElementAppearTask(parentElement, byMethod);
+        }
+
+        private Task<IWebElement> StartWaitElementAppearTask(By byMethod, string logMsg)
+        {
+            var parentElement = driver.FindElement(By.TagName("html"));
+            return this.StartWaitElementAppearTask(parentElement, byMethod, logMsg);
+        }
+
+        private Task<IWebElement> StartWaitElementAppearTask(IWebElement parentElement, By byMethod)
+        {
+            return this.StartWaitElementAppearTask(parentElement, byMethod, null);
+        }
+
+        private void VerifySummaryPageElements()
+        {
+            //wait central chart to show up
+            var svgTask = StartWaitElementAppearTask(By.XPath("//*[name()='svg']"));
+
+            //wait Policy violation show up
+            var policyViolation = StartWaitElementAppearTask(By.Id("single-value")).Result;
+            var policyViolationValueTask = StartWaitElementAppearTask(policyViolation, By.ClassName("single-result"), "summary page policy violation");
+
+            //wait top-users table show up
+            var userTable = StartWaitElementAppearTask(By.Id("user-table")).Result;
+            var topUsersTask = StartWaitElementsAppearTask(userTable, By.ClassName("shared-resultstable-resultstablerow"), "load summary page top-user table");
+
+            //wait top-documents table show up
+            var documentTable = StartWaitElementAppearTask(By.Id("document-table")).Result;
+            var topDocumentsTask = StartWaitElementsAppearTask(documentTable, By.ClassName("shared-resultstable-resultstablerow"), "load summary page top-documents table");
+
+            policyViolationValueTask.Wait();
+            topUsersTask.Wait();
+            svgTask.Wait();
+            topDocumentsTask.Wait();
+        }
+
+        private void Verify_ClickFilteredUserOrDocument(string userOrDoc)
+        {
+            //click on one of the top-users, should direct to another summary page with filtered user
+            var userTable = StartWaitElementAppearTask(By.Id(string.Format("{0}-table", userOrDoc))).Result;
+            SelectDrillDown(userTable);
+
+            //verify the summary page with filtered user
+            var filteredUser = StartWaitElementAppearTask(By.ClassName("filter_tags"), string.Format("load summary page with filtered {0}", userOrDoc)).Result;
+            filteredUser = StartWaitElementAppearTask(filteredUser, By.CssSelector(".tag.label.filter")).Result;
+
+            Assert.True(filteredUser.Text.ToUpper().Contains(string.Format("FILTER {0} IS", userOrDoc == "user" ? userOrDoc.ToUpper() : "OBJECT")));
+            this.VerifySummaryPageElements();
+
+            //remove filtered user
+            this.RemoveUserOrDocFilter();
+            this.VerifySummaryPageElements();
+        }
+
+        private void RemoveUserOrDocFilter()
         {
             var filter = driver.FindElement(By.CssSelector(".tag.label.filter"));
             var ele = filter.FindElement(By.TagName("span"));
             ele.Click();
-            this.VerifySummaryPage();
         }
 
         private void VerifyTerminatedEmployeePage()
         {
-            driver.FindElement(By.LinkText("Suspicous Document Access")).Click();
-            driver.FindElement(By.LinkText("Terminated Employees")).Click();
-
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            StartWaitElementAppearTask(By.LinkText("Suspicous Document Access")).Result.Click();
+            StartWaitElementAppearTask(By.LinkText("Terminated Employees")).Result.Click();
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
             this.ChangeTimeRange();
-
-            //click on the center panel color block
-            watch.Restart();
-            bool loaded = false;
-            Exception ex = null;
-            do
-            {
-                try
-                {
-                    //svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-                    System.Threading.Thread.Sleep(3000);
-                    loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Terminated-employee page Center Chart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Terminated-employee page Center Chart, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            //todo: wait for Data /dev code changes? so that there have results
+            //"Load Terminated-employee page Center Chart"
+            System.Threading.Thread.Sleep(3000);
         }
 
         private void VerifySuspiciousDocumentAccessPage()
         {
-            driver.FindElement(By.LinkText("Suspicous Document Access")).Click();
-            driver.FindElement(By.LinkText("Off Hours")).Click();
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            StartWaitElementAppearTask(By.LinkText("Suspicous Document Access")).Result.Click();
+            StartWaitElementAppearTask(By.LinkText("Off Hours")).Result.Click();
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
             this.ChangeTimeRange();
-
-            //click on the center panel color block
-            watch.Restart();
-            bool loaded = false;
-            Exception ex = null;
-            do
-            {
-                try
-                {
-                    driver.FindElement(By.XPath("//*[name()='svg']"));
-                    loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Suspicous-doc-access page Center Chart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Suspicous-doc-access page Center Chart, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            StartWaitElementAppearTask(By.XPath("//*[name()='svg']"), "Load Suspicous-doc-access page Center Chart").Wait();
         }
 
         private void VerifyAnomalousActivityPage()
         {
-            var multplier = driver.FindElement(By.Id("multiplier_input-input"));
+            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            StartWaitElementAppearTask(By.LinkText("Anomalous Activity")).Result.Click();
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+
+            var multplier = StartWaitElementAppearTask(By.Id("multiplier_input-input")).Result;
             this.SendInput("0.05", multplier);
             this.ChangeTimeRange();
 
-            watch.Restart();
-            bool loaded = false;
-            Exception ex = null;
-
-            do
-            {
-                try
-                {
-                    //check result show up
-                    var table = driver.FindElement(By.Id("main-table"));
-                    var rows = table.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    Assert.True(rows.Count > 0);
-
-                    loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Anomalous-doc-access page, {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Anomalous-doc-access page, {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            var table = StartWaitElementAppearTask(By.Id("main-table")).Result;
+            var rows = StartWaitElementsAppearTask(table, By.ClassName("shared-resultstable-resultstablerow"), "Load Anomalous-doc-access page").Result;
         }
 
         private void LoadDocumentAccessPage()
@@ -271,24 +371,10 @@ namespace unit_test
                 wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             }
 
-            watch.Restart();
-            bool loaded = false;
-            Exception ex = null;
-
-            do
-            {
-                try
-                {
-                    driver.FindElement(By.LinkText("Suspicous Document Access")).Click();
-                    driver.FindElement(By.LinkText("Anomalous Activity")).Click();
-                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+            StartWaitElementAppearTask(By.LinkText("Suspicous Document Access")).Result.Click();
         }
 
-        private void LoadSubitemPageFromSplunkhomePage(string linkText, string subItemPageTitle)
+        private void LoadSubItemPageFromSplunkhomePage(string linkText, string subItemPageTitle)
         {
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
             if (driver.Url != splunkHomeUrl)
@@ -297,79 +383,16 @@ namespace unit_test
                 wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             }
 
-            watch.Restart();
-            bool loaded = false;
-            Exception ex = null;
-
-            do
-            {
-                try
-                {
-                    driver.FindElement(By.LinkText(linkText)).Click();
-                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+            StartWaitElementAppearTask(By.LinkText(linkText)).Result.Click();
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
             Assert.Equal(subItemPageTitle, driver.Title);
         }
 
-        private IWebElement GetSvgInSummaryPage()
-        {
-            //click on the center panel color block
-            watch.Restart();
-            bool loaded = false;
-            IWebElement svg = null;
-            Exception ex = null;
-            do
-            {
-                try
-                {
-                    svg = driver.FindElement(By.XPath("//*[name()='svg']"));
-                    loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page Center Chart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page Center Chart, {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
-
-            return svg;
-        }
-
         private void ChangeTimeRange()
         {
-            bool loaded = false;
-            watch.Restart();
-            Exception ex = null;
-            do
-            {
-                try
-                {
-                    //open "time Range"
-                    driver.FindElement(By.ClassName("time-label")).Click();
-                    IReadOnlyCollection<IWebElement> searchCriterias = driver.FindElements(By.ClassName("accordion-toggle"));
-                    searchCriterias.ElementAt(3).Click();
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            StartWaitElementAppearTask(By.ClassName("time-label")).Result.Click();
+            StartWaitElementsAppearTask(By.ClassName("accordion-toggle")).Result.ElementAt(3).Click();
 
             // choose "Between" and filled up the earliest/latest inputs
             var e3 = driver.FindElement(By.CssSelector(".accordion-group.active"));
@@ -395,29 +418,8 @@ namespace unit_test
 
         private void ChangeTimeRangeNew()
         {
-            bool loaded = false;
-            watch.Restart();
-            Exception ex = null;
-            do
-            {
-                try
-                {
-                    //open "time picker"
-                    var timepicker = driver.FindElement(By.Id("timepicker"));
-                    var timelabel = timepicker.FindElement(By.ClassName("time-label"));
-                    timelabel.Click();
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            var timepicker = StartWaitElementAppearTask(By.Id("timepicker")).Result;
+            StartWaitElementAppearTask(timepicker, By.ClassName("time-label")).Result.Click();
 
             //open "Date Range" dropdown option
             var timepickerview = driver.FindElement(By.CssSelector(".accordion.view-new-time-range-picker-dialog.shared-timerangepicker-dialog"));
@@ -443,6 +445,7 @@ namespace unit_test
             this.SendInput("08/07/2014", earliestDate);
             var latestDate = e4.FindElement(By.CssSelector(".timerangepicker-latest-date.hasDatepicker"));
             this.SendInput("08/11/2014", latestDate);
+            
             //click on apply button
             var e11 = e4.FindElement(By.ClassName("apply"));
             e11.Click();
@@ -493,7 +496,7 @@ namespace unit_test
                 element.Click();
 
                 watch.Restart();
-                this.VerifySummaryPage();
+                this.VerifySummaryPageElements();
             }
 
             Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
@@ -567,124 +570,22 @@ namespace unit_test
             return ret;
         }
 
-        private void VerifySummaryPage()
-        {
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-            bool loaded = false;
-            Exception ex = null;
-            watch.Restart();
-
-            do
-            {
-                try
-                {
-                    Task task1 = Task.Factory.StartNew(() => this.VerifyTopTableLoaded("user-table"));
-                    Task task2 = Task.Factory.StartNew(() => this.VerifyTopTableLoaded("document-table"));
-
-                    task1.Wait();
-                    task2.Wait();
-
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load Summary page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
-
-            //this.Verify_UserOrDocument_Details_Page("Document");
-            //this.VerifyTopReturnsSortedCorrectly(topEvents.Select(a => a.Text));
-        }
-
-        private void VerifyTopTableLoaded(string tableName)
-        {
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-            bool loaded = false;
-            Exception ex = null;
-            watch.Restart();
-
-            do
-            {
-                try
-                {
-                    var table = driver.FindElement(By.Id(tableName));
-                    IReadOnlyCollection<IWebElement> tops = table.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    Assert.True(tops.Count > 0);
-
-                    Random rand = new Random();
-                    int index = rand.Next(0, tops.Count);
-                    //click "include" dropdown menu
-                    Assert.True(tops.ElementAt(index).FindElement(By.ClassName("numeric")) != null);
-
-                    //this will fail as results keep updating
-                    this.VerifyTopReturnsSortedCorrectly(tops.Select(a => a.Text));
-
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, tableName));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, tableName));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
-        }
-
         /// <summary>
         /// Verify user(document)_details page
         /// </summary>
-        /// <param name="msg">specify "user" or "document"</param>
-        private void Verify_UserOrDocument_Details_Page(string msg)
+        /// <param name="userOrDocument">specify "user" or "document"</param>
+        private void Verify_UserOrDocument_Details_Page(string userOrDocument)
         {
-            bool loaded = false;
-            Exception ex = null;
-            watch.Restart();
+            IWebElement webpage = driver.FindElement(By.TagName("html"));
+            IWebElement zoomChart = StartWaitElementAppearTask(webpage, By.Id("zoom-chart-div"), null).Result;
+            var zoomchartTask = StartWaitElementsAppearTask(zoomChart, By.ClassName("highcharts-axis-labels"), string.Format("load {0}-details page zoom chart", userOrDocument));
+            IWebElement trendChart = StartWaitElementAppearTask(webpage, By.Id("trend-chart-div")).Result;
+            var trendchartTask = StartWaitElementsAppearTask(trendChart, By.ClassName("highcharts-axis-labels"), string.Format("load {0}-details page zoom chart", userOrDocument));
 
-            do
-            {
-                try
-                {
-                    IWebElement x_axis;
-
-                    //find the SVG of "zoom-chart-div"
-                    IWebElement zoomChart = driver.FindElement(By.Id("zoom-chart-div"));
-                    x_axis = zoomChart.FindElements(By.ClassName("highcharts-axis-labels"))[0];
-                    Assert.Contains("Thu Aug 72014", x_axis.Text);
-                    Assert.Contains("Mon Aug 11", x_axis.Text);
-
-
-                    //find the SVG of "trend-chart-div"
-                    IWebElement trendChart = driver.FindElement(By.Id("trend-chart-div"));
-                    x_axis = zoomChart.FindElements(By.ClassName("highcharts-axis-labels"))[0];
-                    Assert.Contains("Thu Aug 72014", x_axis.Text);
-                    Assert.Contains("Mon Aug 11", x_axis.Text);
-
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} Details page trendChart and zoomChart, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, msg));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} Details page trendChart and zoomChart, {1}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, msg));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            Assert.Contains("Thu Aug 72014", zoomchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Mon Aug 11", zoomchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Thu Aug 72014", trendchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Mon Aug 11", zoomchartTask.Result.ElementAt(0).Text);
 
             this.VerifySwimline("user");
             this.VerifyClickOnTopEventOnUserOrDocumentDetailPage("user");
@@ -693,126 +594,52 @@ namespace unit_test
         private void VerifySwimline(string msg)
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-            bool loaded = false;
-            Exception ex = null;
 
-            do
-            {
-                try
-                {
-                    //test the swimline zoom window
-                    var e = driver.FindElement(By.Id("zoom-chart-div"));
-                    var e1 = e.FindElement(By.ClassName("highcharts-series"));
-                    var e2 = e1.FindElements(By.TagName("path"))[0];
-                    var e3 = e1.FindElements(By.TagName("path"))[1];
+            //test the swimline zoom window
+            var e = StartWaitElementAppearTask(By.Id("zoom-chart-div")).Result;
+            var e1 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series")).Result;
+            var e2 = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(0);
+            var e3 = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(1);
 
-                    Actions builder = new Actions(driver);
-                    builder.DragAndDropToOffset(e2, 412, 36).Perform();
-                    builder.DragAndDropToOffset(e3, 412, 36).Perform();
+            Actions builder = new Actions(driver);
+            builder.DragAndDropToOffset(e2, 412, 36).Perform();
+            builder.DragAndDropToOffset(e3, 412, 36).Perform();
 
-                    //verify the "reset" shows up when the swim windows is selected.
-                    driver.FindElement(By.ClassName("icon-minus-circle"));
-
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+            //verify the "reset" shows up when the swim windows is selected.
+            StartWaitElementAppearTask(By.ClassName("icon-minus-circle")).Wait();
         }
 
         private void VerifyClickOnTopEventOnUserOrDocumentDetailPage(string msg)
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-            bool loaded = false;
-            Exception ex = null;
 
-            //click on on top events
-            do
-            {
-                try
-                {
-                    var table = driver.FindElement(By.Id("events-table"));
-                    IReadOnlyCollection<IWebElement> tops = table.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    Random rand = new Random();
-                    int index = rand.Next(0, tops.Count);
-                    tops.ElementAt(index).FindElement(By.ClassName("numeric")).Click();
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
+            var table = StartWaitElementAppearTask(By.Id("events-table")).Result;
+            IReadOnlyCollection<IWebElement> tops = StartWaitElementsAppearTask(table, By.ClassName("shared-resultstable-resultstablerow")).Result;
+            Random rand = new Random();
+            int index = rand.Next(0, tops.Count);
+            tops.ElementAt(index).FindElement(By.ClassName("numeric")).Click();
 
-            // verify the top event raw table loaded
-            loaded = false;
-            ex = null;
-            watch.Restart();
-            do
-            {
-                try
-                {
-                    //click "include" dropdown menu
-                    var rawTableDiv = driver.FindElement(By.Id("raw_container"));
-                    var results = rawTableDiv.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    Assert.True(results.Count > 0);
-
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load top event on {2}-detail page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, msg));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load top event on {3}-detail page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, msg));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            var rawTableDiv = StartWaitElementAppearTask(By.Id("raw_container")).Result;
+            StartWaitElementsAppearTask(rawTableDiv, By.ClassName("shared-resultstable-resultstablerow"), string.Format("Load top event on {0}-detail page", msg)).Wait();
         }
 
-        private void TestClickOnTopUserOrDocuments(string userOrDocument)
+        private void SelectDrillDown(IWebElement table)
         {
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-            bool loaded = false;
-            Exception ex = null;
-            watch.Restart();
+            var topUsers = StartWaitElementsAppearTask(table, By.ClassName("shared-resultstable-resultstablerow")).Result;
 
-            do
+            //click on one of the top-users
+            Random rand = new Random();
+            int index = rand.Next(0, topUsers.Count);
+
+            //click "include" dropdown menu
+            topUsers.ElementAt(index).FindElement(By.ClassName("numeric")).Click();
+            var dropdownmenu = StartWaitElementsAppearTask(By.CssSelector(".dropdown-menu.dropdown-context")).Result;
+            foreach (var x in dropdownmenu)
             {
-                try
+                if (x.Displayed == true)
                 {
-                    this.VerifyTopTableLoaded(userOrDocument);
-                    var table = driver.FindElement(By.Id(userOrDocument));
-                    IReadOnlyCollection<IWebElement> tops = table.FindElements(By.ClassName("shared-resultstable-resultstablerow"));
-                    Random rand = new Random();
-                    int index = rand.Next(0, tops.Count);
-
-                    //click "include" dropdown menu
-                    tops.ElementAt(index).FindElement(By.ClassName("numeric")).Click();
-                    var dropdownmenu = driver.FindElements(By.CssSelector(".dropdown-menu.dropdown-context"));
-                    foreach (var x in dropdownmenu)
-                    {
-                        if (x.Displayed == true)
-                        {
-                            x.FindElements(By.ClassName("context-event"))[0].Click();
-                            break;
-                        }
-                    }
-
-                    this.GetSvgInSummaryPage();
-                    this.VerifySummaryPage();
-
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {2} Details page, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, userOrDocument));
-                    loaded = true;
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Load {3} Details page, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, userOrDocument));
-                if (ex != null)
-                {
-                    throw ex;
+                    x.FindElements(By.ClassName("context-event"))[0].Click();
+                    break;
                 }
             }
         }
@@ -830,37 +657,16 @@ namespace unit_test
 
         private void RunAppSetup()
         {
-            this.LoadSubitemPageFromSplunkhomePage("Setup", "warum_conducive_web Setup");
+            this.LoadSubItemPageFromSplunkhomePage("Setup", "warum_conducive_web Setup");
             var saveButton = driver.FindElement(By.CssSelector(".btn.btn-primary"));
             this.SubmitSetupPage(saveButton);
         }
 
         private void SubmitSetupPage(IWebElement saveButton)
         {
-            watch.Restart();
-            bool loaded = false;
-            Exception ex = null;
-            do
-            {
-                try
-                {
-                    IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-                    saveButton.Click();
-                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-                    loaded = true;
-                    logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Submit App setup page, {1} ", DateTime.Now, watch.Elapsed.TotalSeconds));
-                }
-                catch (Exception e) { ex = e; }
-            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold);
-
-            if (!loaded)
-            {
-                logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, Submit App setup page, {2} , !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10));
-                if (ex != null)
-                {
-                    throw ex;
-                }
-            }
+            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            saveButton.Click();
+            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
             Assert.Equal("Summary", driver.Title);
         }
