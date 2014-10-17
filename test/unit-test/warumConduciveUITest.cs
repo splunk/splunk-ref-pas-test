@@ -90,7 +90,7 @@ namespace unit_test
         {
         }
 
-        [Trait("unit-test", "LoadSummaryPage")]
+        [Trait("unit-test", "Summary")]
         [Fact]
         public void Summary()
         {
@@ -99,11 +99,13 @@ namespace unit_test
 
             this.VerifySummaryPageElements();
 
+            this.VerifyClickOnTrendChartLegendItem();
+
             //click a user/doc drilldown and select included
             this.Verify_ClickFilteredUserOrDocument("user");
             this.Verify_ClickFilteredUserOrDocument("document");
 
-            ////this.VerifyClickOnTrendChartLegendItem(svg);
+
         }
 
         [Trait("unit-test", "UserDetails")]
@@ -112,11 +114,25 @@ namespace unit_test
         {
             this.LoadSubItemPageFromSplunkhomePage("User Details", "User Details");
 
-            var userInput =StartWaitElementAppearTask(By.Id("userInput")).Result.FindElement(By.Id("userInput-input"));
+            var userInput = StartWaitElementAppearTask(By.Id("userInput")).Result.FindElement(By.Id("userInput-input"));
             this.SendInput("rblack", userInput);
             this.ChangeTimeRangeNew();
 
             this.Verify_UserOrDocument_Details_Page("user");
+        }
+
+
+        [Trait("unit-test", "DocumentDetails")]
+        [Fact]
+        public void DocumentDetails()
+        {
+            this.LoadSubItemPageFromSplunkhomePage("Document Details", "Document Details");
+
+            var userInput = StartWaitElementAppearTask(By.Id("userInput")).Result.FindElement(By.Id("userInput-input"));
+            this.SendInput("*4799649936474595.dmgr", userInput);
+            this.ChangeTimeRangeNew();
+
+            this.Verify_UserOrDocument_Details_Page("document");
         }
 
         //[Trait("unit-test", "ClickOnTrendChart")]
@@ -279,7 +295,7 @@ namespace unit_test
         private void VerifySummaryPageElements()
         {
             //wait central chart to show up
-            var svgTask = StartWaitElementAppearTask(By.XPath("//*[name()='svg']"));
+            var svgTask = StartWaitElementAppearTask(By.XPath("//*[name()='svg']"), "load Summary page central chart");
 
             //wait Policy violation show up
             var policyViolation = StartWaitElementAppearTask(By.Id("single-value")).Result;
@@ -332,9 +348,7 @@ namespace unit_test
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
             this.ChangeTimeRange();
-            //todo: wait for Data /dev code changes? so that there have results
-            //"Load Terminated-employee page Center Chart"
-            System.Threading.Thread.Sleep(3000);
+            StartWaitElementAppearTask(By.XPath("//*[name()='svg']"), "Load Terminated-employee page Center Chart").Wait();
         }
 
         private void VerifySuspiciousDocumentAccessPage()
@@ -445,7 +459,7 @@ namespace unit_test
             this.SendInput("08/07/2014", earliestDate);
             var latestDate = e4.FindElement(By.CssSelector(".timerangepicker-latest-date.hasDatepicker"));
             this.SendInput("08/11/2014", latestDate);
-            
+
             //click on apply button
             var e11 = e4.FindElement(By.ClassName("apply"));
             e11.Click();
@@ -484,10 +498,12 @@ namespace unit_test
             Console.WriteLine("Click on the the central chart element succeed");
         }
 
-        private void VerifyClickOnTrendChartLegendItem(IWebElement svg)
+        private void VerifyClickOnTrendChartLegendItem()
         {
+            var svg = driver.FindElement(By.XPath("//*[name()='svg']"));
+
             var highchartsLengendItems = svg.FindElements(By.ClassName("highcharts-legend-item"));
-            Console.WriteLine("Load the central chart lengend succeed");
+
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
 
             for (int i = 0; i < highchartsLengendItems.Count; i++)
@@ -498,8 +514,6 @@ namespace unit_test
                 watch.Restart();
                 this.VerifySummaryPageElements();
             }
-
-            Console.WriteLine("Verify ClickOnTrendChartLegendItem succeed");
         }
 
         private List<Tuple<int, int>> TryClickOnEachBarElement(IWebElement element)
@@ -587,28 +601,64 @@ namespace unit_test
             Assert.Contains("Thu Aug 72014", trendchartTask.Result.ElementAt(0).Text);
             Assert.Contains("Mon Aug 11", zoomchartTask.Result.ElementAt(0).Text);
 
-            this.VerifySwimline("user");
-            this.VerifyClickOnTopEventOnUserOrDocumentDetailPage("user");
+            this.VerifyZoomChart();
+            this.VerifyClickOnTopEventOnUserOrDocumentDetailPage(userOrDocument);
         }
 
-        private void VerifySwimline(string msg)
+        private void VerifyZoomChart()
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
 
-            //test the swimline zoom window
+            //the zoomchart series
             var e = StartWaitElementAppearTask(By.Id("zoom-chart-div")).Result;
             var e1 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series")).Result;
-            var e2 = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(0);
-            var e3 = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(1);
+            var zoomChartSeries = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(1);
 
             Actions builder = new Actions(driver);
-            builder.DragAndDropToOffset(e2, 412, 36).Perform();
-            builder.DragAndDropToOffset(e3, 412, 36).Perform();
+            builder.ContextClick(zoomChartSeries).Perform();
+
+            // the data point on the zoom chart
+            var e0 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series-group")).Result;
+            var e4 = StartWaitElementAppearTask(e0, By.CssSelector(".highcharts-markers.highcharts-tracker")).Result;
+            var d = e4.FindElement(By.TagName("path")).GetAttribute("d");
+            var moveTo = GetSvgLineCoordinates(d).ElementAt(3);
+
+            builder.DragAndDropToOffset(zoomChartSeries, moveTo.Item1, moveTo.Item2).Perform();
 
             //verify the "reset" shows up when the swim windows is selected.
             StartWaitElementAppearTask(By.ClassName("icon-minus-circle")).Wait();
         }
 
+        private IEnumerable<Tuple<int, int>> GetSvgLineCoordinates(string d)
+        {
+            List<Tuple<int, int>> result = new List<Tuple<int, int>>();
+            Console.WriteLine("jly d=:" + d);
+
+            //d example: M 406 30.799999999999997 L 418 30.799999999999997 418 42.8 406 42.8 Z
+            d = d.Replace("M", "");
+            d = d.Replace("L", "");
+            d = d.Replace("Z", "");
+            d = d.TrimEnd(' ').TrimStart(' ');
+            d = d.Replace("  ", " ");
+
+            string[] values = d.Split(' ');
+            int index = 0;
+            while (index < values.Length)
+            {
+                float v1 = 0, v2 = 0;
+                if (values[index] == string.Empty)
+                {
+                    index++;
+                }
+
+                v1 = float.Parse(values[index++]);
+                v2 = float.Parse(values[index++]);
+                result.Add(new Tuple<int, int>((int)v1, (int)v2));
+            }
+
+            return result;
+        }
+        
         private void VerifyClickOnTopEventOnUserOrDocumentDetailPage(string msg)
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
