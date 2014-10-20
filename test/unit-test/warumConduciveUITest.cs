@@ -195,7 +195,7 @@ namespace unit_test
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss},{3}, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, logMsg));
                     if (ex != null)
                     {
-                        throw new Exception(string.Format("Can't find {0} by {1} for {2}", parentElement.ToString(), byMethod.ToString(), logMsg), ex);
+                        throw new Exception(string.Format("Can't find tagName[{0}]:text[{1}] by {2} for {3}", parentElement.TagName, parentElement.Text, byMethod.ToString(), logMsg), ex);
                     }
                 }
 
@@ -613,12 +613,7 @@ namespace unit_test
             //right click zoomchart so that the zoom elements show up, click on some non-affective item to make the right click popup window disappear
             builder.ContextClick(zoomChartSeries)
                 .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.Escape)
                 .SendKeys(Keys.Return)
                 .Build()
                 .Perform();
