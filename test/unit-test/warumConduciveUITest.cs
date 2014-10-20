@@ -104,8 +104,6 @@ namespace unit_test
             //click a user/doc drilldown and select included
             this.Verify_ClickFilteredUserOrDocument("user");
             this.Verify_ClickFilteredUserOrDocument("document");
-
-
         }
 
         [Trait("unit-test", "UserDetails")]
@@ -117,7 +115,6 @@ namespace unit_test
             var userInput = StartWaitElementAppearTask(By.Id("userInput")).Result.FindElement(By.Id("userInput-input"));
             this.SendInput("rblack", userInput);
             this.ChangeTimeRangeNew();
-
             this.Verify_UserOrDocument_Details_Page("user");
         }
 
@@ -150,7 +147,6 @@ namespace unit_test
         public void DocumentAccess()
         {
             this.LoadDocumentAccessPage();
-
             this.VerifyAnomalousActivityPage();
             this.VerifySuspiciousDocumentAccessPage();
             this.VerifyTerminatedEmployeePage();
@@ -184,7 +180,7 @@ namespace unit_test
                         result = parentElement.FindElement(byMethod);
                         Assert.NotNull(result);
 
-                        if (logMsg != null)
+                        if (string.IsNullOrEmpty(logMsg))
                         {
                             logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, {2}, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, logMsg));
                         }
@@ -199,7 +195,7 @@ namespace unit_test
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss},{3}, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, logMsg));
                     if (ex != null)
                     {
-                        throw ex;
+                        throw new Exception(string.Format("Can't find {0} by {1} for {2}", parentElement.ToString(), byMethod.ToString(), logMsg), ex);
                     }
                 }
 
@@ -235,7 +231,7 @@ namespace unit_test
                         result = parentElement.FindElements(byMethod).ToList();
                         Assert.True(result.Count > 0);
 
-                        if (logMsg != null)
+                        if (string.IsNullOrEmpty(logMsg))
                         {
                             logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, {2}, {1}", DateTime.Now, watch.Elapsed.TotalSeconds, logMsg));
                         }
@@ -250,7 +246,7 @@ namespace unit_test
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss},{3}, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, logMsg));
                     if (ex != null)
                     {
-                        throw ex;
+                        throw new Exception(string.Format("Can't find the group of {0} by {1} for {2}", parentElement.ToString(), byMethod.ToString(), logMsg), ex);
                     }
                 }
 
@@ -272,7 +268,7 @@ namespace unit_test
 
         private Task<IReadOnlyCollection<IWebElement>> StartWaitElementsAppearTask(IWebElement parentElement, By byMethod)
         {
-            return this.StartWaitElementsAppearTask(parentElement, byMethod, null);
+            return this.StartWaitElementsAppearTask(parentElement, byMethod, string.Empty);
         }
 
         private Task<IWebElement> StartWaitElementAppearTask(By byMethod)
@@ -289,7 +285,7 @@ namespace unit_test
 
         private Task<IWebElement> StartWaitElementAppearTask(IWebElement parentElement, By byMethod)
         {
-            return this.StartWaitElementAppearTask(parentElement, byMethod, null);
+            return this.StartWaitElementAppearTask(parentElement, byMethod, string.Empty);
         }
 
         private void VerifySummaryPageElements()
@@ -591,7 +587,7 @@ namespace unit_test
         private void Verify_UserOrDocument_Details_Page(string userOrDocument)
         {
             IWebElement webpage = driver.FindElement(By.TagName("html"));
-            IWebElement zoomChart = StartWaitElementAppearTask(webpage, By.Id("zoom-chart-div"), null).Result;
+            IWebElement zoomChart = StartWaitElementAppearTask(webpage, By.Id("zoom-chart-div")).Result;
             var zoomchartTask = StartWaitElementsAppearTask(zoomChart, By.ClassName("highcharts-axis-labels"), string.Format("load {0}-details page zoom chart", userOrDocument));
             IWebElement trendChart = StartWaitElementAppearTask(webpage, By.Id("trend-chart-div")).Result;
             var trendchartTask = StartWaitElementsAppearTask(trendChart, By.ClassName("highcharts-axis-labels"), string.Format("load {0}-details page zoom chart", userOrDocument));
@@ -608,14 +604,24 @@ namespace unit_test
         private void VerifyZoomChart()
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-
             //the zoomchart series
             var e = StartWaitElementAppearTask(By.Id("zoom-chart-div")).Result;
             var e1 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series")).Result;
             var zoomChartSeries = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(1);
-
             Actions builder = new Actions(driver);
-            builder.ContextClick(zoomChartSeries).Perform();
+
+            //right click zoomchart so that the zoom elements show up, click on some non-affective item to make the right click popup window disappear
+            builder.ContextClick(zoomChartSeries)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.Return)
+                .Build()
+                .Perform();
 
             // the data point on the zoom chart
             var e0 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series-group")).Result;
@@ -624,15 +630,14 @@ namespace unit_test
             var moveTo = GetSvgLineCoordinates(d).ElementAt(3);
 
             builder.DragAndDropToOffset(zoomChartSeries, moveTo.Item1, moveTo.Item2).Perform();
-
+         
             //verify the "reset" shows up when the swim windows is selected.
-            StartWaitElementAppearTask(By.ClassName("icon-minus-circle")).Wait();
+            StartWaitElementAppearTask(By.ClassName("icon-minus-circle"),"zoom window shown").Wait();
         }
 
         private IEnumerable<Tuple<int, int>> GetSvgLineCoordinates(string d)
         {
             List<Tuple<int, int>> result = new List<Tuple<int, int>>();
-            Console.WriteLine("jly d=:" + d);
 
             //d example: M 406 30.799999999999997 L 418 30.799999999999997 418 42.8 406 42.8 Z
             d = d.Replace("M", "");
@@ -658,7 +663,7 @@ namespace unit_test
 
             return result;
         }
-        
+
         private void VerifyClickOnTopEventOnUserOrDocumentDetailPage(string msg)
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
@@ -734,6 +739,7 @@ namespace unit_test
             driver.Navigate().GoToUrl(splunkHomeUrl);
             Console.WriteLine("load page takes " + watch.Elapsed.TotalSeconds);
             Assert.Equal(driver.Title, "Login - Splunk");
+            driver.Manage().Window.Maximize();
 
             // login 
             driver.FindElement(By.Id("username")).SendKeys("admin");
