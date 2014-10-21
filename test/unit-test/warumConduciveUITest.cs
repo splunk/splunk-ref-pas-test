@@ -723,6 +723,8 @@ namespace unit_test
                 if (x.Displayed == true)
                 {
                     x.FindElements(By.ClassName("context-event"))[0].Click();
+                    IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+                    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
                     break;
                 }
             }
