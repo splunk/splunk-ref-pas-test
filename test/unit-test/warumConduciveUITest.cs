@@ -71,7 +71,6 @@ namespace unit_test
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
         private static bool firstTestRun = false;
         private static List<string> logs = null;
-        private static Stopwatch watch = new Stopwatch();
         private const int timeoutThreshold = 90; // seconds
 
         public void SetFixture(MyFixture data)
@@ -82,7 +81,6 @@ namespace unit_test
                 logs = data.Logs;
                 this.LoadSplunkHomePageAndSignIn();
                 firstTestRun = true;
-                watch.Start();
             }
         }
 
@@ -161,7 +159,9 @@ namespace unit_test
         /// <returns></returns>
         private Task<IWebElement> StartWaitElementAppearTask(IWebElement parentElement, By byMethod, string logMsg)
         {
-            watch.Restart();
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             bool loaded = false;
             Exception ex = null;
 
@@ -212,7 +212,9 @@ namespace unit_test
         /// <returns></returns>
         private Task<IReadOnlyCollection<IWebElement>> StartWaitElementsAppearTask(IWebElement parentElement, By byMethod, string logMsg)
         {
-            watch.Restart();
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             bool loaded = false;
             Exception ex = null;
             IReadOnlyCollection<IWebElement> result = null;
@@ -315,7 +317,7 @@ namespace unit_test
         {
             //click on one of the top-users, should direct to another summary page with filtered user
             var userTable = StartWaitElementAppearTask(By.Id(string.Format("{0}-table", userOrDoc))).Result;
-            SelectDrillDown(userTable);
+            this.TryTask(delegate() { this.SelectDrillDown(userTable); }, string.Format("SelectDrillDown({0})", userOrDoc));
 
             //verify the summary page with filtered user
             var filteredUser = StartWaitElementAppearTask(By.ClassName("filter_tags"), string.Format("load summary page with filtered {0}", userOrDoc)).Result;
@@ -465,7 +467,8 @@ namespace unit_test
 
         private void SendInput(string str, IWebElement element)
         {
-            watch.Restart();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             do
             {
                 element.Clear();
@@ -507,7 +510,6 @@ namespace unit_test
                 var element = highchartsLengendItems[i].FindElement(By.TagName("rect"));
                 element.Click();
 
-                watch.Restart();
                 this.VerifySummaryPageElements();
             }
         }
@@ -597,21 +599,22 @@ namespace unit_test
             Assert.Contains("Thu Aug 72014", trendchartTask.Result.ElementAt(0).Text);
             Assert.Contains("Mon Aug 11", zoomchartTask.Result.ElementAt(0).Text);
 
-            this.VerifyZoomChart();
-            this.VerifyClickOnTopEventOnUserOrDocumentDetailPage(userOrDocument);
+            this.TryTask(delegate() { this.VerifyZoomChart(); }, "VerifyZoomChart");
+            this.TryTask(delegate() { VerifyClickOnTopEventOnUserOrDocumentDetailPage(userOrDocument); }, string.Format("VerifyClickOnTopEventOnUserOrDocumentDetailPage({0})", userOrDocument));
         }
 
         private void VerifyZoomChart()
         {
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
             //the zoomchart series
             var e = StartWaitElementAppearTask(By.Id("zoom-chart-div")).Result;
             var e1 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series")).Result;
-            var zoomChartSeries = StartWaitElementsAppearTask(e1, By.TagName("path")).Result.ElementAt(1);
+            var zoomChartSeries = StartWaitElementAppearTask(e1, By.ClassName("highcharts-tracker")).Result;
             Actions builder = new Actions(driver);
 
             //right click zoomchart so that the zoom elements show up, click on some non-affective item to make the right click popup window disappear
             builder.ContextClick(zoomChartSeries)
+                .SendKeys(Keys.ArrowDown)
+                .SendKeys(Keys.ArrowDown)
                 .SendKeys(Keys.ArrowDown)
                 .SendKeys(Keys.Escape)
                 .SendKeys(Keys.Return)
@@ -623,11 +626,10 @@ namespace unit_test
             var e4 = StartWaitElementAppearTask(e0, By.CssSelector(".highcharts-markers.highcharts-tracker")).Result;
             var d = e4.FindElement(By.TagName("path")).GetAttribute("d");
             var moveTo = GetSvgLineCoordinates(d).ElementAt(3);
-
             builder.DragAndDropToOffset(zoomChartSeries, moveTo.Item1, moveTo.Item2).Perform();
-         
+
             //verify the "reset" shows up when the swim windows is selected.
-            StartWaitElementAppearTask(By.ClassName("icon-minus-circle"),"zoom window shown").Wait();
+            driver.FindElement(By.ClassName("icon-minus-circle"));
         }
 
         private IEnumerable<Tuple<int, int>> GetSvgLineCoordinates(string d)
@@ -659,10 +661,42 @@ namespace unit_test
             return result;
         }
 
+        /// <summary>
+        /// if the function may need to be try several times before the elements or results shown, call this function to do the several tries
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="msg"></param>
+        private void TryTask(Action func, string msg)
+        {
+            Console.WriteLine(string.Format("================================== run TryTask  {0}==================================", msg));
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            bool loaded = false;
+            Exception ex = null;
+            int count = 0;
+            do
+            {
+                try
+                {
+                    Console.WriteLine(string.Format("Run # {0}", ++count));
+                    func.Invoke();
+                    loaded = true;
+                }
+                catch (Exception e) { ex = e; }
+            } while (!loaded && watch.Elapsed.TotalSeconds < timeoutThreshold * 2);
+
+            if (!loaded)
+            {
+                if (ex != null)
+                {
+                    throw new Exception(msg, ex);
+                }
+            }
+        }
+
         private void VerifyClickOnTopEventOnUserOrDocumentDetailPage(string msg)
         {
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(1));
-
             var table = StartWaitElementAppearTask(By.Id("events-table")).Result;
             IReadOnlyCollection<IWebElement> tops = StartWaitElementsAppearTask(table, By.ClassName("shared-resultstable-resultstablerow")).Result;
             Random rand = new Random();
@@ -723,7 +757,8 @@ namespace unit_test
 
         private void LoadSplunkHomePageAndSignIn()
         {
-            watch.Restart();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
 
             // set the timeout after page load to 30seconds
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
