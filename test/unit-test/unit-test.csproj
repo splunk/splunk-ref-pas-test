@@ -33,6 +33,9 @@
     <Reference Include="Selenium.WebDriverBackedSelenium">
       <HintPath>..\packages\selenium-dotnet-2.42.0\net40\Selenium.WebDriverBackedSelenium.dll</HintPath>
     </Reference>
+    <Reference Include="SplunkSDK">
+      <HintPath>..\packages\SplunkSDK.1.0.2\lib\net35\SplunkSDK.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
