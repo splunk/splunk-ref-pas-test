@@ -65,7 +65,7 @@ namespace unit_test
     public class WarumConduciveUITest : IUseFixture<MyFixture>, IDisposable
     {
         private static IWebDriver driver = null;
-        private static string splunkServerUrl = "http://localhost:8000/";//"https://54.87.132.73:8000/";
+        private static string splunkServerUrl = "http://localhost:8000/";
         private const string password = "changeme";
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
         private static string warumHomeUrl = splunkServerUrl + "en-us/app/warum_conducive_web/";
@@ -118,35 +118,15 @@ namespace unit_test
         [Trait("unit-test", "UserDetails")]
         [Fact]
         public void UserDetails()
-        {
-            //this.LoadSubItemPageFromSplunkhomePage("User Details", "User Details");
-            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            if (driver.Url != warumHomeUrl)
-            {
-                driver.Navigate().GoToUrl(warumHomeUrl);
-                wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-            }
-
+        {            
+            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));            
             driver.Navigate().GoToUrl(userActivityUrl);
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
             var userInput = StartWaitElementAppearTask(By.CssSelector(".splunk-textinput.splunk-view")).Result.FindElement(By.TagName("input"));
             //this.SendInput("rblack", userInput);
             this.ChangeTimeRange();
-            this.Verify_UserOrDocument_Details_Page("user");
-        }
-
-        [Trait("unit-test", "DocumentDetails")]
-        [Fact]
-        public void DocumentDetails()
-        {
-            this.LoadSubItemPageFromSplunkhomePage("Document Details", "Document Details");
-
-            var userInput = StartWaitElementAppearTask(By.Id("userInput")).Result.FindElement(By.Id("userInput-input"));
-            this.SendInput("*4799649936474595.dmgr", userInput);
-            this.ChangeTimeRange();
-
-            this.Verify_UserOrDocument_Details_Page("document");
+            this.Verify_UserOrDocument_Details_Page("panel2"); 
         }
 
         //[Trait("unit-test", "ClickOnTrendChart")]
@@ -164,52 +144,11 @@ namespace unit_test
         [Fact]
         public void DocumentAccess()
         {
-            //IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            //if (driver.Url != warumHomeUrl)
-            //{
-            //    driver.Navigate().GoToUrl(warumHomeUrl);
-            //    wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-            //}
-
-            //this.VerifyAnomalousActivityPage();
+            this.VerifyAnomalousActivityPage();
             this.VerifyOffhourDocumentAccessPage();
             this.VerifyTerminatedEmployeePage();
         }
-
-        [Trait("unit-test", "Summary")]
-        [Fact]
-        public void DistributedUser()
-        {
-            Service splunkService = new Service("localhost");
-            splunkService.Login("admin", "changeme");
-            var users = splunkService.GetUsers();
-
-            //remove the previously created users
-            foreach (var key in users.Keys)
-            {
-                if (key.StartsWith("warum_test"))
-                {
-                    users.Remove(key);
-                }
-            }
-            users.Refresh();
-
-            //create test users
-            for (int i = 0; i < 5; i++)
-            {
-                Args args = new Args();
-                args.Add("password", "changeme");
-                args.Add("roles", "power");
-                User user = users.Create("warum_test" + i, args);
-                users.Refresh();
-            }
-        }
-
-        private void ManageTestUsers()
-        {
-
-        }
-
+    
         /// <summary>
         /// Create a task to wait a web elment to show up, use this function if expect the item take some time to show up in the page
         /// </summary>
@@ -255,7 +194,7 @@ namespace unit_test
                     logs.Add(string.Format("{0:MM/dd/yy H:mm:ss},{3}, {2}, !!!Exception: takes more than {1} seconds", DateTime.Now, timeoutThreshold, timeoutThreshold + 10, string.IsNullOrEmpty(logMsg) ? byMethod.ToString() : logMsg));
                     if (ex != null)
                     {
-                        throw new Exception(string.Format("Can't find tagName[{0}]:text[{1}] by {2} for {3}", parentElement.TagName, parentElement.Text, byMethod.ToString(), logMsg), ex);
+                        throw new Exception(string.Format("Can't find tagName[{0}] by {1} for {2}", parentElement.TagName, byMethod.ToString(), logMsg), ex);
                     }
                 }
 
@@ -356,9 +295,8 @@ namespace unit_test
             var svgTask = StartWaitElementAppearTask(By.XPath("//*[name()='svg']"), "load Summary page central chart");
 
             //wait Policy violation show up
-            var policyViolation = StartWaitElementAppearTask(By.Id("policy_single")).Result;
-            var policyViolationValueTask = StartWaitElementAppearTask(policyViolation, By.ClassName("single-result"), "summary page policy violation");
-
+            var donutsChart = StartWaitElementAppearTask(By.ClassName("donut_series"));
+      
             //wait top-users table show up
             var userTable = StartWaitElementAppearTask(By.Id("user_table")).Result;
             var topUsersTask = StartWaitElementsAppearTask(userTable, By.ClassName("shared-resultstable-resultstablerow"), "load summary page top-user table");
@@ -367,7 +305,9 @@ namespace unit_test
             var documentTable = StartWaitElementAppearTask(By.Id("document_table")).Result;
             var topDocumentsTask = StartWaitElementsAppearTask(documentTable, By.ClassName("shared-resultstable-resultstablerow"), "load summary page top-documents table");
 
-            policyViolationValueTask.Wait();
+            donutsChart.Wait();
+            var donuts = StartWaitElementsAppearTask(By.ClassName("donut"), "summary page policy violation donutschart").Result;
+            Assert.True(double.Parse(StartWaitElementAppearTask(donuts.ElementAt(0), By.ClassName("centerText")).Result.Text) > 0);
             topUsersTask.Wait();
             svgTask.Wait();
             topDocumentsTask.Wait();
@@ -425,35 +365,22 @@ namespace unit_test
         private void VerifyAnomalousActivityPage()
         {
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            //StartWaitElementAppearTask(By.LinkText("Anomalous Activity")).Result.Click();
             driver.Navigate().GoToUrl(anomalousActivityUrl);
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
 
-            var multplier = StartWaitElementAppearTask(By.Id("multiplier_input-input")).Result;
-            this.SendInput("0.05", multplier);
+            //var multplier = StartWaitElementAppearTask(By.Id("multiplier_input-input")).Result;
+            //this.SendInput("0.05", multplier);
             this.ChangeTimeRange();
-
-            var table = StartWaitElementAppearTask(By.Id("main-table")).Result;
+            var table = StartWaitElementAppearTask(By.CssSelector(".shared-resultstable-resultstablemaster.results-table")).Result;
             var rows = StartWaitElementsAppearTask(table, By.ClassName("shared-resultstable-resultstablerow"), "Load Anomalous-doc-access page").Result;
-        }
-
-        private void LoadDocumentAccessPage()
-        {
-            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            if (driver.Url != warumHomeUrl)
-            {
-                driver.Navigate().GoToUrl(warumHomeUrl);
-                wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-            }
-            //StartWaitElementAppearTask(By.LinkText("Suspicous Document Access")).Result.Click();
         }
 
         private void LoadSubItemPageFromSplunkhomePage(string linkText, string subItemPageTitle)
         {
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            if (driver.Url != splunkHomeUrl)
+            if (driver.Url != warumHomeUrl)
             {
-                driver.Navigate().GoToUrl(splunkHomeUrl);
+                driver.Navigate().GoToUrl(warumHomeUrl);
                 wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             }
 
@@ -462,7 +389,7 @@ namespace unit_test
 
             Assert.Equal(subItemPageTitle, driver.Title);
         }
-         
+
         private void ChangeTimeRange()
         {
             var a1 = StartWaitElementAppearTask(By.CssSelector(".controls.shared-timerangepicker")).Result;
@@ -483,9 +410,9 @@ namespace unit_test
             e8[0].Click();
 
             var earliestDate = e4.FindElement(By.ClassName("timerangepicker-earliest-date"));
-            this.SendInput("08/07/2014", earliestDate);
+            this.SendInput("11/17/2014", earliestDate);
             var latestDate = e4.FindElement(By.ClassName("timerangepicker-latest-date"));
-            this.SendInput("08/11/2014", latestDate);
+            this.SendInput("11/18/2014", latestDate);
 
             //click on apply button
             var e11 = e4.FindElement(By.ClassName("apply"));
@@ -622,39 +549,28 @@ namespace unit_test
             IWebElement trendChart = StartWaitElementAppearTask(webpage, By.Id("trend_chart")).Result;
             var trendchartTask = StartWaitElementsAppearTask(trendChart, By.ClassName("highcharts-axis-labels"), string.Format("load {0}-details page zoom chart", userOrDocument));
 
-            Assert.Contains("Thu Aug 72014", zoomchartTask.Result.ElementAt(0).Text);
-            Assert.Contains("Mon Aug 11", zoomchartTask.Result.ElementAt(0).Text);
-            Assert.Contains("Thu Aug 72014", trendchartTask.Result.ElementAt(0).Text);
-            Assert.Contains("Mon Aug 11", zoomchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Mon Nov 172014", zoomchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Tue Nov 18", zoomchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Mon Nov 172014", trendchartTask.Result.ElementAt(0).Text);
+            Assert.Contains("Tue Nov 18", zoomchartTask.Result.ElementAt(0).Text);
 
             this.TryTask(delegate() { this.VerifyZoomChart(); }, "VerifyZoomChart");
-            this.TryTask(delegate() { VerifyClickOnTopEventOnUserOrDocumentDetailPage(userOrDocument); }, string.Format("VerifyClickOnTopEventOnUserOrDocumentDetailPage({0})", userOrDocument));
+            this.TryTask(delegate() { VerifyClickOnTopEventOnUserOrDocumentDetailPage(); }, string.Format("VerifyClickOnTopEventOnUserOrDocumentDetailPage({0})", userOrDocument));
         }
 
         private void VerifyZoomChart()
         {
-            //the zoomchart series
-            var e = StartWaitElementAppearTask(By.Id("zoom_chart")).Result;
-            var e1 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series")).Result;
-            var zoomChartSeries = StartWaitElementAppearTask(e1, By.ClassName("highcharts-tracker")).Result;
             Actions builder = new Actions(driver);
-
-            //right click zoomchart so that the zoom elements show up, click on some non-affective item to make the right click popup window disappear
-            builder.ContextClick(zoomChartSeries)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.ArrowDown)
-                .SendKeys(Keys.Escape)
-                .SendKeys(Keys.Return)
-                .Build()
-                .Perform();
-
-            // the data point on the zoom chart
-            var e0 = StartWaitElementAppearTask(e, By.ClassName("highcharts-series-group")).Result;
-            var e4 = StartWaitElementAppearTask(e0, By.CssSelector(".highcharts-markers.highcharts-tracker")).Result;
-            var d = e4.FindElement(By.TagName("path")).GetAttribute("d");
-            var moveTo = GetSvgLineCoordinates(d).ElementAt(3);
-            builder.DragAndDropToOffset(zoomChartSeries, moveTo.Item1, moveTo.Item2).Perform();
+            //the zoomchart series
+            var zoomchart = StartWaitElementAppearTask(By.Id("zoom_chart")).Result;
+            var highchartsGroup = StartWaitElementAppearTask(zoomchart, By.ClassName("highcharts-series-group")).Result;
+            var highcharts = StartWaitElementAppearTask(highchartsGroup, By.ClassName("highcharts-series")).Result;
+            var path = StartWaitElementsAppearTask(highcharts, By.TagName("path")).Result.ElementAt(0);
+            var d = path.GetAttribute("d");
+            var moveFrom = this.GetSvgLineCoordinates(d).ElementAt(1);
+            var moveTo = this.GetSvgLineCoordinates(d).ElementAt(3);
+            builder.MoveToElement(path, moveFrom.Item1, moveFrom.Item2).Build().Perform();
+            builder.DragAndDropToOffset(path, moveTo.Item1 - moveFrom.Item1, 0).Build().Perform();
 
             //verify the "reset" shows up when the swim windows is selected.
             driver.FindElement(By.ClassName("icon-minus-circle"));
@@ -728,17 +644,19 @@ namespace unit_test
             }
         }
 
-        private void VerifyClickOnTopEventOnUserOrDocumentDetailPage(string msg)
+        private void VerifyClickOnTopEventOnUserOrDocumentDetailPage()
         {
             //var table = StartWaitElementAppearTask(By.Id("events-table")).Result;
-            var table = StartWaitElementAppearTask(By.Id("panel1")).Result;
+            var table = StartWaitElementAppearTask(By.Id("panel2")).Result;
             IReadOnlyCollection<IWebElement> tops = StartWaitElementsAppearTask(table, By.ClassName("shared-resultstable-resultstablerow")).Result;
             Random rand = new Random();
             int index = rand.Next(0, tops.Count);
+
+            //this used to render to the same page, now load a new page
             tops.ElementAt(index).FindElement(By.ClassName("numeric")).Click();
 
-            var rawTableDiv = StartWaitElementAppearTask(By.Id("raw_container")).Result;
-            StartWaitElementsAppearTask(rawTableDiv, By.ClassName("shared-resultstable-resultstablerow"), string.Format("Load top event on {0}-detail page", msg)).Wait();
+            //var rawTableDiv = StartWaitElementAppearTask(By.Id("raw_container")).Result;
+            //StartWaitElementsAppearTask(rawTableDiv, By.ClassName("shared-resultstable-resultstablerow"), string.Format("Load top event on {0}-detail page", msg)).Wait();
         }
 
         private void SelectDrillDown(IWebElement table)
@@ -777,18 +695,55 @@ namespace unit_test
 
         private void RunAppSetup()
         {
-            this.LoadSubItemPageFromSplunkhomePage("Setup", "warum_conducive_web Setup");
-            var saveButton = driver.FindElement(By.CssSelector(".btn.btn-primary"));
-            this.SubmitSetupPage(saveButton);
-        }
+            this.LoadSubItemPageFromSplunkhomePage("Setup", "Setup | Splunk");
 
-        private void SubmitSetupPage(IWebElement saveButton)
-        {
-            IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            saveButton.Click();
-            wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+            var dropdown = driver.FindElement(By.Id("departments_dropdown"));            
+            var e = dropdown.FindElement(By.ClassName("select2-choices"));
+            e.Click();
+            e.FindElement(By.TagName("input")).SendKeys(Keys.Enter);
+            e.Click();
+            e.FindElement(By.TagName("input")).SendKeys(Keys.Enter);
+            e.Click();
+            e.FindElement(By.TagName("input")).SendKeys(Keys.Enter);
+            
 
-            Assert.Equal("Summary", driver.Title);
+            
+            ////remove all elements
+            //try
+            //{
+            //    var removes = driver.FindElements(By.ClassName("remove_field"));
+            //    foreach (var ele in removes)
+            //    {
+            //        ele.Click();
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+
+            //}
+
+            //driver.FindElement(By.Id("divisions_button")).Click();
+            //var divisionInput = StartWaitElementAppearTask(driver.FindElement(By.Id("divisions")), By.TagName("input")).Result;
+            //divisionInput.SendKeys("div1");
+
+            //driver.FindElement(By.Id("locations_button")).Click();
+            //var locationInput = StartWaitElementAppearTask(driver.FindElement(By.Id("locations")), By.TagName("input")).Result;
+            //locationInput.SendKeys("loc1");
+
+            //driver.FindElement(By.Id("policies_button")).Click();
+            //var policyInput = StartWaitElementsAppearTask(driver.FindElement(By.Id("policies")), By.TagName("input")).Result;
+            //policyInput.ElementAt(0).SendKeys("pol1");
+            //policyInput.ElementAt(1).SendKeys("code1");
+            //policyInput.ElementAt(2).SendKeys("1");
+
+            var save = driver.FindElement(By.Id("save"));
+            save.Click();
+
+            //IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+            //saveButton.Click();
+            //wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+
+            //Assert.Equal("Summary", driver.Title);
         }
 
         private void LoadSplunkHomePageAndSignIn()
@@ -806,10 +761,9 @@ namespace unit_test
             wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             Console.WriteLine("load page takes " + watch.Elapsed.TotalSeconds);
             //Assert.Contains(driver.Title, "Login - Splunk");
-            //driver.Manage().Window.Maximize();
+            driver.Manage().Window.Maximize();
 
-            // login 
-
+            // login
             driver.FindElement(By.Id("username")).SendKeys("admin");
             System.Threading.Thread.Sleep(1000);
             driver.FindElement(By.Id("password")).SendKeys(password);
@@ -827,7 +781,7 @@ namespace unit_test
 
             Console.WriteLine("now Need to run setup page");
 
-            //this.RunAppSetup();
+            this.RunAppSetup();
         }
     }
 }
