@@ -11,7 +11,7 @@ class WarumGetUserInfoCommand(GeneratingCommand):
 	user = Option(require=True)
 
 	def generate(self):
-		url = 'http://10.10.10.10:5000/user_list/api/v1.0/users/' + self.user
+		url = 'http://localhost:5000/user_list/api/v1.0/users/' + self.user
 		response  = requests.get(url)
 		data = response.json()
 		data_list = data['user'].items()
