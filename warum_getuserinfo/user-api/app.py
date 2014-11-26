@@ -1,4 +1,11 @@
-#!flask/bin/python
+#!/bin/python
+
+# Add lib directory to include paths
+import os.path
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
+
+# Includes
 from flask import Flask, jsonify, abort, make_response
 
 app = Flask(__name__)
