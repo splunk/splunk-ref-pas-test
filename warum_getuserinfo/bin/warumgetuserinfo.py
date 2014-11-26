@@ -12,14 +12,14 @@ class WarumGetUserInfoCommand(GeneratingCommand):
 
 	def generate(self):
 		url = 'http://localhost:5000/user_list/api/v1.0/users/' + self.user
-		response  = requests.get(url)
-		data = response.json()
-		data_list = data['user'].items()
-		row = {}
-		#for s in data_list:
-			#row = row +' '+ str(s[0])+'="'+str(s[1])+'"'
-		#yield {'_time': time.time(), 'sourcetype': 'RESTAPI', '_raw': row }
-		for k,v in data_list:
-			row[str(k)] = str(v)
-		yield row
+		data = requests.get(url).json()
+		if 'user' in data:
+			# Known user.
+			row = {}
+			for k, v in data['user'].iteritems():
+				row[str(k)] = str(v)
+			yield row
+		else:
+			# Unknown user. Return no data.
+			pass
 dispatch(WarumGetUserInfoCommand, sys.argv, sys.stdin, sys.stdout, __name__)
