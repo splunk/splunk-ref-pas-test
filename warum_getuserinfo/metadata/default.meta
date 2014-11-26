@@ -1,0 +1,4 @@
+# Allow other apps to see the warumgetuserinfo custom search command
+[]
+access = read: [ * ], write : [ admin ]
+export = system
