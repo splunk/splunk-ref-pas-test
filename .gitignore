@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 test/unit-test/bin/Debug/chromedriver.exe
 test/unit-test/bin/Debug/Newtonsoft.Json.dll
 test/unit-test/bin/Debug/Selenium.WebDriverBackedSelenium.dll
@@ -26,3 +27,19 @@ test/unit-test/obj/Debug/unit-test.csproj.FileListAbsolute.txt
 test/unit-test/obj/Debug/unit-test.csprojResolveAssemblyReference.cache
 test/unit-test/obj/Debug/unit-test.dll
 test/unit-test/obj/Debug/unit-test.pdb
+=======
+# OS X
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Python
+*.pyo
+*.pyc
+
+# UI test automation generated files
+test/unit-test/bin/Debug
+test/unit-test/obj/Debug
+test/warum-conducive-test.v12.suo
+>>>>>>> 27ac3443a4bf22cdb06340bb41cac9f57a298bfa
