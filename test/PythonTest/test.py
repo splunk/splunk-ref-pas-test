@@ -559,7 +559,7 @@ def RunAppSetup():
 driver = webdriver.Firefox()
 splunkServerUrl = "http://localhost:8000/"
 splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home"
-warumHomeUrl=splunkServerUrl+"en-US/app/warum_conducive_web/"
+warumHomeUrl=splunkServerUrl+"en-US/app/warum_pas_ri/"
 summaryUrl = warumHomeUrl + "summary";
 offhourDocUrl = warumHomeUrl + "offhours_document_access";
 terminatedEmployeeDocUrl = warumHomeUrl + "terminated_employee_document_access";
