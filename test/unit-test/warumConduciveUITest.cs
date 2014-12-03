@@ -68,7 +68,7 @@ namespace unit_test
         private static string splunkServerUrl = "http://localhost:8000/";
         private const string password = "changeme";
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
-        private static string warumHomeUrl = splunkServerUrl + "en-us/app/warum_conducive_web/";
+        private static string warumHomeUrl = splunkServerUrl + "en-us/app/warum_pas_ri/";
         private static string summaryUrl = warumHomeUrl + "summary";
         private static string offhourDocUrl = warumHomeUrl + "offhours_document_access";
         private static string terminatedEmployeeDocUrl = warumHomeUrl + "terminated_employee_document_access";

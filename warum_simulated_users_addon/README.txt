@@ -5,7 +5,7 @@ This app also contain a sample REST service to test the command.
 Steps to start the REST service
 *******************************
 1. On command line go to user-api directory
-   $ cd $SPLUNK_HOME/etc/apps/warum_getuserinfo/user-api
+   $ cd $SPLUNK_HOME/etc/apps/warum_simulated_users_addon/user-api
 
 2. Run the web server
    $ python app.py
