@@ -436,9 +436,12 @@ def ChangeTimeRange():
     e8[0].click()
 
     earliestDate = e4.find_element_by_class_name("timerangepicker-earliest-date")
-    SendInput("11/17/2014", earliestDate)
+    beforeToday=datetime.date.today()-timedelta(days=1)
+    beforeToday="{0}/{1}/{2}".format(beforeToday.month,beforeToday.day,beforeToday.year)
+    today=time.strftime("%m/%d/%Y")
+    SendInput(beforeToday, earliestDate)
     latestDate = e4.find_element_by_class_name("timerangepicker-latest-date")
-    SendInput("11/18/2014", latestDate)
+    SendInput(today, latestDate)
 
     #click on apply button
     e11 = e4.find_element_by_class_name("apply")
@@ -541,11 +544,11 @@ def RunAppSetup():
     dropdown = StartWaitElementAppearTask(driver, By.ID,"departments_dropdown").get()
     select2choices = dropdown.find_element_by_class_name("select2-choices")
     select2choices.click()
-    select2choices.find_element_by_tag_name("input").send_keys(Keys.ENTER) 
+    select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
     select2choices.click()
-    select2choices.find_element_by_tag_name("input").send_keys(Keys.ENTER) 
+    select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
     select2choices.click()
-    select2choices.find_element_by_tag_name("input").send_keys(Keys.ENTER) 
+    select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
 
     save = driver.find_element_by_id("save")
     save.click();    
@@ -571,7 +574,7 @@ logs = list()
 timeoutThreshold = 20 # seconds
 
 LoadSplunkHomePageAndSignIn()
-#RunAppSetup()
+RunAppSetup()
 UserDetails()
 Summary()
 DocumentAccess()
@@ -580,4 +583,3 @@ driver.close()
 
 print "done"
 print logs
-

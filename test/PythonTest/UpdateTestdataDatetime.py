@@ -4,10 +4,10 @@ import time
 from datetime import date, timedelta
 
 if len(sys.argv) !=2:
-    print "provide testdata file path (e.g. 'C:\\Program Files\\Splunk\\etc\\apps\\warum_pas_sample_data\\data\\eventgenerated.log'"
+    print "provide testdata file path (e.g. 'C:\\Program Files\\Splunk\\etc\\apps\\ri_pas_sample_data\\data\\eventgenerated.log'"
     exit(1)
 
-filename=sys.argv[1]  #'C:\\Program Files\\Splunk\\etc\\apps\\warum_pas_sample_data\\data\\eventgenerated.log'
+filename=sys.argv[1]  #'C:\\Program Files\\Splunk\\etc\\apps\\ri_pas_sample_data\\data\\eventgenerated.log'
 
 # get all unique timestamps
 timestamps=[]
