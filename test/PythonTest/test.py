@@ -102,8 +102,11 @@ def VerifyUserPageTrendChart():
     trendchartTask = StartWaitElementsAppearTask(trendChart, By.CLASS_NAME,"highcharts-axis-labels", "load userdetailspage trendchart")
     trends=trendchartTask.get()
 
-    assert"Mon Nov 172014", trends[0].text
-    assert"Tue Nov 18", trends[0].text 
+    startdate="{0} {1}{2}".format(searchRangeStartTime.strftime("%b"),searchRangeStartTime.day,searchRangeStartTime.year)
+    enddate="{0} {1}".format(searchRangeEndTime.strftime("%b"),searchRangeEndTime.day)
+
+    assert startdate, trends[0].text
+    assert enddate, trends[0].text 
   
 
 ##############################################
@@ -114,8 +117,11 @@ def VerifyUserPageZoomChart():
     zoomchartTask = StartWaitElementsAppearTask(zoomChart, By.CLASS_NAME,"highcharts-axis-labels", "load userdetailspage zoomchart")
     zooms=zoomchartTask.get()
 
-    assert "Mon Nov 172014" in zooms[0].text
-    assert"Tue Nov 18" in zooms[0].text
+    startdate="{0} {1}{2}".format(searchRangeStartTime.strftime("%b"),searchRangeStartTime.day,searchRangeStartTime.year)
+    enddate="{0} {1}".format(searchRangeEndTime.strftime("%b"),searchRangeEndTime.day)
+
+    assert startdate in zooms[0].text
+    assert enddate in zooms[0].text
 
     #zoom out the zoomchart series
     highchartsGroup = StartWaitElementAppearTask(zoomChart, By.CLASS_NAME,"highcharts-series-group").get()
@@ -164,7 +170,7 @@ def GetSvgLineCoordinates(d):
 # ActionTask
 ##############################################
 def TryAction(action):
-    print "start to TryTryAction({0})".format(action.func_name)
+    #print "start to TryTryAction({0})".format(action.func_name)
     stoptime=time.time()+30
     finished=False
     ex=None
@@ -180,7 +186,7 @@ def TryAction(action):
         print "!!!!!!!!!==================={0}() throw exception {1}".format(action,ex)
         raise Exception(ex)
     
-    print "finish to TryTryAction({0})".format(action.func_name)
+    #print "finish to TryTryAction({0})".format(action.func_name)
 
 def ActionTask(action,logMsg=None):
     print "start to ActionTask({0})".format(action.func_name)
@@ -436,18 +442,18 @@ def ChangeTimeRange():
     e8[0].click()
 
     earliestDate = e4.find_element_by_class_name("timerangepicker-earliest-date")
-    beforeToday=datetime.date.today()-timedelta(days=1)
-    beforeToday="{0}/{1}/{2}".format(beforeToday.month,beforeToday.day,beforeToday.year)
-    today=time.strftime("%m/%d/%Y")
-    SendInput(beforeToday, earliestDate)
+    
+    startdate="{0}/{1}/{2}".format(searchRangeStartTime.month,searchRangeStartTime.day,searchRangeStartTime.year)
+    enddate=searchRangeEndTime.strftime("%m/%d/%Y")
+    SendInput(startdate, earliestDate)
     latestDate = e4.find_element_by_class_name("timerangepicker-latest-date")
-    SendInput(today, latestDate)
+    SendInput(enddate, latestDate)
 
     #click on apply button
     e11 = e4.find_element_by_class_name("apply")
     e11.click()
     print("Change time selection succeed")
-    return
+    return 
 
 ##############################################
 # SendInput
@@ -549,6 +555,12 @@ def RunAppSetup():
     select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
     select2choices.click()
     select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
+    select2choices.click()
+    select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
+    select2choices.click()
+    select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
+    select2choices.click()
+    select2choices.find_element_by_class_name("select2-input").send_keys(Keys.ENTER) 
 
     save = driver.find_element_by_id("save")
     save.click();    
@@ -572,6 +584,10 @@ setupUrl = warumHomeUrl + "setup";
 
 logs = list()
 timeoutThreshold = 20 # seconds
+
+searchRangeStartTime=datetime.date.today()-timedelta(days=5)
+searchRangeEndTime=datetime.date.today()
+
 
 LoadSplunkHomePageAndSignIn()
 RunAppSetup()
