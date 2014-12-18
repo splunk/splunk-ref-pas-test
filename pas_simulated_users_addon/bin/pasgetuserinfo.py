@@ -7,7 +7,7 @@ from splunklib.searchcommands import \
     dispatch, GeneratingCommand, Configuration, Option, validators
 
 @Configuration()
-class WarumGetUserInfoCommand(GeneratingCommand):
+class PasGetUserInfoCommand(GeneratingCommand):
 	user = Option(require=True)
 
 	def generate(self):
@@ -22,4 +22,4 @@ class WarumGetUserInfoCommand(GeneratingCommand):
 		else:
 			# Unknown user. Return no data.
 			pass
-dispatch(WarumGetUserInfoCommand, sys.argv, sys.stdin, sys.stdout, __name__)
+dispatch(PasGetUserInfoCommand, sys.argv, sys.stdin, sys.stdout, __name__)

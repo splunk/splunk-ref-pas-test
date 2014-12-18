@@ -1,11 +1,11 @@
-warumgetuserinfo - custom Splunk search command to get user information from a REST service.
+pasgetuserinfo - custom Splunk search command to get user information from a REST service.
 
 This app also contain a sample REST service to test the command.
 
 Steps to start the REST service
 *******************************
 1. On command line go to user-api directory
-   $ cd $SPLUNK_HOME/etc/apps/warum_simulated_users_addon/user-api
+   $ cd $SPLUNK_HOME/etc/apps/pas_simulated_users_addon/user-api
 
 2. Run the web server
    $ python app.py
@@ -17,6 +17,6 @@ http://localhost:5000/user_list/api/v1.0/users/rblack
 
 Currently service is configured to work with three users "rblack", "jbell", and "bberry".
 
-Syntax for the warumgetuserinfo command
+Syntax for the pasgetuserinfo command
 ***************************************
-| warumgetuserinfo user=rblack
+| pasgetuserinfo user=rblack

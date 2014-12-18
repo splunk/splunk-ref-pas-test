@@ -16,7 +16,7 @@ from multiprocessing.pool import ThreadPool
 ##############################################
 
 def Summary():
-    driver.get(warumHomeUrl)
+    driver.get(pasHomeUrl)
     WebDriverWait(driver,30).until(readystate_complete)
     ChangeTimeRange()
     VerifySummaryPageElements()
@@ -574,13 +574,13 @@ def RunAppSetup():
 driver = webdriver.Firefox()
 splunkServerUrl = "http://localhost:8000/"
 splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home"
-warumHomeUrl=splunkServerUrl+"en-US/app/warum_pas_ri/"
-summaryUrl = warumHomeUrl + "summary";
-offhourDocUrl = warumHomeUrl + "offhours_document_access";
-terminatedEmployeeDocUrl = warumHomeUrl + "terminated_employee_document_access";
-anomalousActivityUrl = warumHomeUrl + "anomalous_activity";
-userActivityUrl = warumHomeUrl + "user_activity";
-setupUrl = warumHomeUrl + "setup";
+pasHomeUrl=splunkServerUrl+"en-US/app/pas_ref_app/"
+summaryUrl = pasHomeUrl + "summary";
+offhourDocUrl = pasHomeUrl + "offhours_document_access";
+terminatedEmployeeDocUrl = pasHomeUrl + "terminated_employee_document_access";
+anomalousActivityUrl = pasHomeUrl + "anomalous_activity";
+userActivityUrl = pasHomeUrl + "user_activity";
+setupUrl = pasHomeUrl + "setup";
 
 logs = list()
 timeoutThreshold = 20 # seconds

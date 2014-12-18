@@ -52,7 +52,7 @@ namespace unit_test
             Logs.Add(string.Format("{0:MM/dd/yy H:mm:ss}, ============================== End Test Run ==============================", System.DateTime.Now));
             string userHomePath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             Console.WriteLine(userHomePath);
-            StreamWriter logFile = new StreamWriter(userHomePath + "\\" + "WarumTestPerfLog.txt", true);
+            StreamWriter logFile = new StreamWriter(userHomePath + "\\" + "PasTestPerfLog.txt", true);
             Logs.ForEach(a => logFile.WriteLine(a));
             logFile.Dispose();
             logFile.Close();
@@ -62,18 +62,18 @@ namespace unit_test
     /// <summary>
     /// Tests the UI
     /// </summary>
-    public class WarumConduciveUITest : IUseFixture<MyFixture>, IDisposable
+    public class PasUITest : IUseFixture<MyFixture>, IDisposable
     {
         private static IWebDriver driver = null;
         private static string splunkServerUrl = "http://localhost:8000/";
         private const string password = "changeme";
         private static string splunkHomeUrl = splunkServerUrl + "en-US/app/launcher/home";
-        private static string warumHomeUrl = splunkServerUrl + "en-us/app/warum_pas_ri/";
-        private static string summaryUrl = warumHomeUrl + "summary";
-        private static string offhourDocUrl = warumHomeUrl + "offhours_document_access";
-        private static string terminatedEmployeeDocUrl = warumHomeUrl + "terminated_employee_document_access";
-        private static string anomalousActivityUrl = warumHomeUrl + "anomalous_activity";
-        private static string userActivityUrl = warumHomeUrl + "user_activity";
+        private static string pasHomeUrl = splunkServerUrl + "en-us/app/pas_ref_app/";
+        private static string summaryUrl = pasHomeUrl + "summary";
+        private static string offhourDocUrl = pasHomeUrl + "offhours_document_access";
+        private static string terminatedEmployeeDocUrl = pasHomeUrl + "terminated_employee_document_access";
+        private static string anomalousActivityUrl = pasHomeUrl + "anomalous_activity";
+        private static string userActivityUrl = pasHomeUrl + "user_activity";
         private static bool firstTestRun = false;
         private static List<string> logs = null;
         private const int timeoutThreshold = 90; // seconds
@@ -378,9 +378,9 @@ namespace unit_test
         private void LoadSubItemPageFromSplunkhomePage(string linkText, string subItemPageTitle)
         {
             IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-            if (driver.Url != warumHomeUrl)
+            if (driver.Url != pasHomeUrl)
             {
-                driver.Navigate().GoToUrl(warumHomeUrl);
+                driver.Navigate().GoToUrl(pasHomeUrl);
                 wait.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
             }
 

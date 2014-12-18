@@ -1,0 +1,9 @@
+The folder contains Splunk Reference App PAS UI tests and the test data set.
+To run tests:
+1. Install selenium python package
+	pip install -U selenium
+2. Copy pas_sample_data folder to splunk app folder
+	(noted if splunk is installed on Windows OS, you need to update the data file path in the file of pas_sample_data\default\inputs.conf) 
+3. Need to update the timestamps in the testdata to the latest date by running the  following command
+	cd PythonTest
+	python UpdateTestdataDatetime.py Splunk-App-Folder\pas_sample_data\testdata.log
