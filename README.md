@@ -29,4 +29,4 @@ Community contributions via pull requests are welcomed! Go to the
 
 ### License
 
-The Splunk Reference App - PAS is licensed under the Apache License 2.0. Details can be found in the LICENSE file.
+The Splunk Reference App - PAS is licensed under the Apache License 2.0. Details can be found in the [LICENSE](https://github.com/splunk/splunk-ref-pas-code/blob/master/LICENSE) file.
