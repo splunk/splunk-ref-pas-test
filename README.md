@@ -3,7 +3,7 @@
 
 The Splunk Reference App - PAS teaches you how to develop apps for Splunk. Here, you can explore the evolution of the reference app along with some additional engineering artifacts, like tests, deployment considerations, and tradeoff discussions.
 
-The accompanying Splunk Developer Guide for Building Apps presents a documentary of how the team went about building and testing this reference app. The guide is currently available as an early preview at <http://dev.splunk.com/devguide>. We welcome your feedback on both the app and the guide.
+The accompanying Splunk Developer Guide for Building Apps presents a documentary of how the team went about building and testing this reference app. The guide is currently available as an early preview at <http://dev.splunk.com/goto/devguide>. We welcome your feedback on both the app and the guide.
 
 ### What Does This Repo Contain?
 * **pas_simulated_users_addon** - a simulated identity provider so that you do not need to install your own LDAP or AD for the demo purposes. Follow instructions in the README.txt inside the folder on how to start it.
