@@ -1,5 +1,5 @@
-# Splunk Reference App - PAS - Test Repo 
-### Version 1.0.1
+# Splunk Reference App - PAS (Ember Update) - Test Repo 
+### Version 1.5.x
 
 The Splunk Reference App - PAS teaches you how to develop apps for Splunk. Here, you can explore the evolution of the reference app along with some additional engineering artifacts, like tests, deployment considerations, and tradeoff discussions.
 
