@@ -24,7 +24,8 @@ Syntax for the pasgetuserinfo command
 
 Simulating User Account Lock/Unlock States
 ******************************************
-Two REST endpoints are exposed to simulate account locking and unlocking.
+Two REST endpoints are exposed to simulate account locking and unlocking and
+should be called via a standard POST interaction.
 The three accounts listed above are available for use in simulations.
 
 Calling the endpoints with other accounts will result in a 404 response with
