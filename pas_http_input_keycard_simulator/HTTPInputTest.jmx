@@ -11,7 +11,7 @@
       <stringProp name="TestPlan.user_define_classpath"></stringProp>
     </TestPlan>
     <hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="HTTP Input Users" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Keycard HTTP Input" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
@@ -34,7 +34,7 @@
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.connect_timeout"></stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
-          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
           <stringProp name="HTTPSampler.path"></stringProp>
           <stringProp name="HTTPSampler.concurrentPool">4</stringProp>
@@ -53,13 +53,13 @@
           </collectionProp>
         </HeaderManager>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Input Test" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Keycard Event Test" enabled="true">
           <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{&quot;event&quot;: {&quot;username&quot;: &quot;${username}&quot;,&quot;lat&quot;: &quot;${lat}&quot;,&quot;long&quot;: &quot;${long}&quot;,&quot;building_name&quot;: &quot;${facility_name}&quot;,&quot;floor&quot;: &quot;${floor}&quot;,&quot;status&quot;:&quot;${status}&quot;}}&#xd;
+                <stringProp name="Argument.value">{&quot;event&quot;: {&quot;timestamp&quot;:&quot;${timestamp}&quot;,&quot;username&quot;: &quot;${username}&quot;,&quot;lat&quot;: &quot;${lat}&quot;,&quot;long&quot;: &quot;${long}&quot;,&quot;building_name&quot;: &quot;${facility_name}&quot;,&quot;floor&quot;: &quot;${floor}&quot;,&quot;status&quot;:&quot;${status}&quot;}}&#xd;
 </stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
@@ -81,7 +81,7 @@
           <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Usernames" enabled="true">
+          <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Keycard Usernames" enabled="true">
             <stringProp name="delimiter">,</stringProp>
             <stringProp name="fileEncoding"></stringProp>
             <stringProp name="filename">usernames.csv</stringProp>
@@ -103,7 +103,7 @@
             <stringProp name="shareMode">shareMode.all</stringProp>
           </CSVDataSet>
           <hashTree/>
-          <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Lat and Long" enabled="true">
+          <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Building Locations" enabled="true">
             <stringProp name="filename">location.csv</stringProp>
             <stringProp name="fileEncoding"></stringProp>
             <stringProp name="variableNames">loc1,loc2,loc3,loc4</stringProp>
@@ -117,10 +117,20 @@
           <BSFPreProcessor guiclass="TestBeanGUI" testclass="BSFPreProcessor" testname="BSF PreProcessor" enabled="true">
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
-            <stringProp name="script">function get_rand(min, max) {
+            <stringProp name="script">/*
+* This PreProcessor script reads from the supplied CSV files
+* and picks a random value via the get_rand() method.
+* 
+* When the put() method is called, the associated value in
+* HTTP Input Test-&gt;Body Data is filled in for each individual
+* request.
+*/
+
+function get_rand(min, max) {
 	return Math.floor((max-min+1)*Math.random())+min;
 }
 
+vars.put(&apos;timestamp&apos;, Date.now());
 vars.put(&apos;username&apos;, vars.get(&apos;user_id&apos; + get_rand(1,20)));
 vars.put(&apos;facility_name&apos;, vars.get(&apos;building_name&apos; + get_rand(1,4)));
 vars.put(&apos;floor&apos;, get_rand(1,9));
@@ -133,8 +143,7 @@ if(get_rand(1,2) == 1) {
 
 var location = vars.get(&apos;loc&apos; + get_rand(1,4)).split(&quot;,&quot;);
 vars.put(&apos;lat&apos;, location[0]);
-vars.put(&apos;long&apos;, location[1]);
-</stringProp>
+vars.put(&apos;long&apos;, location[1]);</stringProp>
             <stringProp name="scriptLanguage">javascript</stringProp>
           </BSFPreProcessor>
           <hashTree/>
