@@ -20,7 +20,7 @@ users = [
         'UserRole': u'Sr Architect', 
         'CompanyAddress': u'123 Main St, Austin, TX - 78737', 
         'CompanyPhone': u'512-808-0808',
-        'UserImage': u'No Image Available Yet',
+        'UserImage': u'https://s3.amazonaws.com/uifaces/faces/twitter/brad_frost/73.jpg',
         'done': False,
         'AccountStatus': 'Account Unlocked'
     },
@@ -33,7 +33,7 @@ users = [
         'UserRole': u'Systems Engineer', 
         'CompanyAddress': u'16 Elm Street, Charlotee, NC- 87699', 
         'CompanyPhone': u'876-808-0808',
-        'UserImage': 'No Image Available Yet',
+        'UserImage': 'https://s3.amazonaws.com/uifaces/faces/twitter/peterme/73.jpg',
         'done': False,
         'AccountStatus': 'Account Unlocked'
     },
@@ -46,7 +46,7 @@ users = [
         'UserRole': u'Developer', 
         'CompanyAddress': u'61615 5th street, Austin, TX - 78737', 
         'CompanyPhone': u'512-677-9999',
-        'UserImage': 'No Image Available Yet',
+        'UserImage': 'https://s3.amazonaws.com/uifaces/faces/twitter/dustinlamont/73.jpg',
         'done': False,
         'AccountStatus': 'Account Unlocked'
     }
