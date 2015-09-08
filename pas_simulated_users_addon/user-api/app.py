@@ -10,43 +10,57 @@ from flask import Flask, jsonify, abort, make_response
 
 app = Flask(__name__)
 
+# Test profile images (except for Snowden's) come from http://uifaces.com
 users = [
     {
         'UserName': 'rblack',
         'UserFullName': u'Richard Black',
-        'UserEmail': u'rblack@splunk.com', 
-        'UserPhone': u'512-999-999', 
-        'CompanyName': u'Splunk, Inc.', 
-        'UserRole': u'Sr Architect', 
-        'CompanyAddress': u'123 Main St, Austin, TX - 78737', 
+        'UserEmail': u'rblack@splunk.com',
+        'UserPhone': u'512-999-999',
+        'CompanyName': u'Splunk, Inc.',
+        'UserRole': u'Sr Architect',
+        'CompanyAddress': u'123 Main St, Austin, TX - 78737',
         'CompanyPhone': u'512-808-0808',
-        'UserImage': u'https://s3.amazonaws.com/uifaces/faces/twitter/brad_frost/73.jpg',
+        'UserImage': '/en-US/splunkd/__raw/servicesNS/admin/pas_simulated_users_addon/static/rblack.jpg',
         'done': False,
         'AccountStatus': 'Account Unlocked'
     },
     {
         'UserName': 'jbell',
         'UserFullName': u'John Bell',
-        'UserEmail': u'jbell@ibm.us.com', 
-        'UserPhone': u'308-777-999', 
-        'CompanyName': u'IBM US, Inc.', 
-        'UserRole': u'Systems Engineer', 
-        'CompanyAddress': u'16 Elm Street, Charlotee, NC- 87699', 
+        'UserEmail': u'jbell@parnellaerospace.com',
+        'UserPhone': u'308-777-999',
+        'CompanyName': u'Parnell Aerospace',
+        'UserRole': u'Systems Engineer',
+        'CompanyAddress': u'16 Parnell Heath, Charlotee, NC- 87699',
         'CompanyPhone': u'876-808-0808',
-        'UserImage': 'https://s3.amazonaws.com/uifaces/faces/twitter/peterme/73.jpg',
+        'UserImage': '/en-US/splunkd/__raw/servicesNS/admin/pas_simulated_users_addon/static/jbell.jpg',
+        'done': False,
+        'AccountStatus': 'Account Unlocked'
+    },
+    {
+        'UserName': 'bandrew',
+        'UserFullName': u'Bob Andrew',
+        'UserEmail': u'bandrew@warumri.net',
+        'UserPhone': u'+7-095-206-777-9929',
+        'CompanyName': u'Warum GmbH',
+        'UserRole': u'Chief of Exploration',
+        'CompanyAddress': u'1730 Geheimnis Strasse, Zurich, Switzerland 98101',
+        'CompanyPhone': u'884-242-4242',
+        'UserImage': '/en-US/splunkd/__raw/servicesNS/admin/pas_simulated_users_addon/static/bandrew.png',
         'done': False,
         'AccountStatus': 'Account Unlocked'
     },
     {
         'UserName': 'bberry',
         'UserFullName': u'Ben Berry',
-        'UserEmail': u'bberry@gmail.com', 
-        'UserPhone': u'208-999-999', 
-        'CompanyName': u'Splunk, Inc.', 
-        'UserRole': u'Developer', 
-        'CompanyAddress': u'61615 5th street, Austin, TX - 78737', 
+        'UserEmail': u'bberry@gmail.com',
+        'UserPhone': u'208-999-999',
+        'CompanyName': u'Splunk, Inc.',
+        'UserRole': u'Developer',
+        'CompanyAddress': u'61615 5th street, Austin, TX - 78737',
         'CompanyPhone': u'512-677-9999',
-        'UserImage': 'https://s3.amazonaws.com/uifaces/faces/twitter/dustinlamont/73.jpg',
+        'UserImage': '/en-US/splunkd/__raw/servicesNS/admin/pas_simulated_users_addon/static/bberry.jpg',
         'done': False,
         'AccountStatus': 'Account Unlocked'
     }
