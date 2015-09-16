@@ -20,3 +20,30 @@ Currently service is configured to work with three users "rblack", "jbell", and 
 Syntax for the pasgetuserinfo command
 ***************************************
 | pasgetuserinfo user=rblack
+
+
+Simulating User Account Lock/Unlock States
+******************************************
+Two REST endpoints are exposed to simulate account locking and unlocking and
+should be called via a standard POST interaction.
+The three accounts listed above are available for use in simulations.
+
+Calling the endpoints with other accounts will result in a 404 response with
+and the following JSON: "{'error': 'Not found'}".
+
+1. Account Lock Endpoint:
+http://localhost:5000/user_list/api/v1.0/users/lock/<username>
+
+Successful Response:
+{
+  "user": "Account Locked"
+}
+
+2. Account Unlock Endpoint:
+http://localhost:5000/user_list/api/v1.0/users/unlock/<username>
+
+Successful Response:
+{
+  "user": "Account Unlocked"
+}
+

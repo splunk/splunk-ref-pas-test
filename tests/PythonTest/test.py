@@ -532,8 +532,7 @@ def RunAppSetup():
     driver.get(setupUrl)
     WebDriverWait(driver,30).until(readystate_complete)
 
-    dropdown = StartWaitElementAppearTask(driver, By.ID,"departments_dropdown").get()
-    select2choices = dropdown.find_element_by_class_name("select2-choices")
+    select2choices = StartWaitElementAppearTask(driver, By.CSS_SELECTOR,"#departments_dropdown .select2-choices").get()
  
     #remove all elements
     try:
